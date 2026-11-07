@@ -10,8 +10,8 @@ fn main() {
         Ok(())
     })();
     if let Err(error) = result {
-        let text: Vec<u16> = format!("투자계산기를 시작하지 못했습니다. 설치 파일로 다시 설치해 주세요.\n{}",error).encode_utf16().chain(Some(0)).collect();
-        let title: Vec<u16> = "투자계산기".encode_utf16().chain(Some(0)).collect();
+        let text: Vec<u16> = format!("Could not start mikunoi_Stock_Calculator. Please reinstall the application.\n{}",error).encode_utf16().chain(Some(0)).collect();
+        let title: Vec<u16> = "mikunoi_Stock_Calculator".encode_utf16().chain(Some(0)).collect();
         unsafe { MessageBoxW(0,text.as_ptr(),title.as_ptr(),0x10); }
     }
 }

@@ -6,7 +6,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Source bundle failed' }
     & cargo build --release --manifest-path launcher/Cargo.toml
     if ($LASTEXITCODE -ne 0) { throw 'Rust build failed' }
-    & $Python -m PyInstaller --noconfirm --windowed --onedir --name CalculatorUI --distpath dist --workpath build --specpath . --paths ui --icon assets/matrix-icon.ico --add-data "assets/matrix-icon.ico;assets" --add-data "generated/InvestmentCalculator-source.txt;source" ui/main.py
+    & $Python -m PyInstaller --noconfirm --windowed --onedir --name CalculatorUI --distpath dist --workpath build --specpath . --paths ui --icon assets/matrix-icon.ico --add-data "assets/matrix-icon.ico;assets" --add-data "ui/translations.json;." --add-data "generated/InvestmentCalculator-source.txt;source" ui/main.py
     if ($LASTEXITCODE -ne 0) { throw 'UI build failed' }
     New-Item -ItemType Directory -Force package/runtime,package/licenses | Out-Null
     # Rebuild only our staging runtime; removed dependencies must not linger in releases.
@@ -16,7 +16,8 @@ try {
     Remove-Item -LiteralPath $runtimeStage -Recurse -Force
     New-Item -ItemType Directory -Path $runtimeStage | Out-Null
     Copy-Item dist/CalculatorUI/* package/runtime -Recurse -Force
-    Copy-Item launcher/target/release/investment-calculator.exe package/InvestmentCalculator.exe -Force
+    if (Test-Path -LiteralPath 'package/InvestmentCalculator.exe') { Remove-Item -LiteralPath 'package/InvestmentCalculator.exe' -Force }
+    Copy-Item launcher/target/release/investment-calculator.exe package/mikunoi_Stock_Calculator.exe -Force
     Copy-Item assets/matrix-icon.ico package/InvestmentCalculator.ico -Force
     Copy-Item README.md package/README.md -Force
     Copy-Item LICENSE,THIRD_PARTY.md package -Force

@@ -1,9 +1,8 @@
-# 투자계산기 개발 안내
-Rust stdlib 실행기 + Python 3.12 Tkinter UI 구성입니다.
-ui/main.py: 앱, portfolio_data.py: 자산 검증, average_cost.py: 평단,
-allocation_tool.py: 목표 비중, allocation_export.py: 이미지 저장.
+# mikunoi_Stock_Calculator 개발 / Development
 
-## 실행 (PowerShell)
+Rust stdlib launcher + Python 3.12 Tkinter UI. No broker or order engine.
+
+## Run from source (Windows PowerShell)
 ```powershell
 py -3.12 -m venv .venv
 .venv/Scripts/python.exe -m pip install -r requirements.txt
@@ -11,25 +10,39 @@ py -3.12 -m venv .venv
 .venv/Scripts/python.exe ui/main.py
 ```
 
-## 설치파일 빌드
-Rust stable MSVC, Visual Studio C++ Build Tools, Windows SDK, Inno Setup을 설치하세요.
-SDK 버전이 다르면 RC 환경변수에 rc.exe 경로를 지정하세요.
+## Build the installer
+Install Rust stable MSVC, Visual Studio C++ Build Tools, Windows SDK and Inno Setup.
+Set the RC environment variable to rc.exe if the SDK resource compiler path differs.
 ```powershell
 ./build.ps1 -Compiler 'C:/Program Files (x86)/Inno Setup 7/ISCC.exe'
 ```
-결과는 releases 폴더에 생성됩니다. 최종 사용자에게 개발 도구는 필요하지 않습니다.
+Outputs are in releases/. End users do not need developer tools.
 
-## 소스 TXT 복원
-BEGIN FILE/END FILE 사이를 같은 상대 경로에 저장하세요.
-BASE64 FILE은 디코딩하여 지정된 아이콘 경로에 저장하세요.
-생성된 generated 폴더를 다시 소스 묶음에 넣지 마세요.
+## Check changes
+```powershell
+.venv/Scripts/python.exe release_checks.py
+```
+Tests isolate LOCALAPPDATA using a temporary folder; they do not read personal assets.
 
-## 동작 유지
-자료는 LOCALAPPDATA/IndependentInvestmentCalculator에 보존됩니다.
-실제 주문과 네트워크 조회가 없는 오프라인 계산기입니다.
-탭은 애니메이션 없이 전환합니다. 목표 이력은 최근 5개입니다.
-환율이 없는 해외 자산은 경고합니다. 수량은 정수로 입력합니다.
-소스 저장 승인 문구는 정확히 '감사합니다 mikunoi님'입니다.
+## Modules
+- main.py: app, asset editor and preference persistence
+- quantity.py / portfolio_data.py: Decimal shares (up to 8 places), validation and currency conversion
+- average_cost.py / allocation_tool.py: calculations and tool views
+- i18n.py / translations.json: explicit Korean-to-English UI catalog; user data is not translated
+- asset_files.py: bilingual Excel/CSV interchange and JSON
+- allocation_export.py: image export; goal_history.py: five saved scenarios
+- source_export.py: explicit user-approved source TXT export
 
-## 라이선스
-MIT License, Copyright (c) 2026 mikunoi. LICENSE를 함께 유지하세요.
+## 유지 사항 / Compatibility
+설치 ID와 LocalAppData/IndependentInvestmentCalculator 경로를 유지하여 업그레이드 시 개인 자료를 보존합니다.
+Keep the installation AppId and data path stable. Do not bundle personal portfolio, goals or settings files.
+US selects English text; the reporting currency stays KRW. No automatic FX or order execution.
+Do not truncate fractional shares. Persist quantities as decimal strings; calculations use Decimal.
+
+## Source TXT recovery
+Save each BEGIN FILE / END FILE section to its specified relative path.
+Decode the BASE64 icon section into assets/matrix-icon.ico.
+Do not recursively include generated source bundles.
+
+## License
+MIT License, Copyright (c) 2026 mikunoi. Keep LICENSE and third-party notices.

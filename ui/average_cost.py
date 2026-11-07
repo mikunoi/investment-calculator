@@ -1,6 +1,8 @@
+from i18n import tr
 """Local, orderless average-cost simulator with a self-contained visual theme."""
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
+from quantity import shares, display_shares
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -8,26 +10,22 @@ from tkinter import ttk, messagebox
 def number(raw):
     value = Decimal(str(raw).replace(',', '').strip())
     if not value.is_finite() or value < 0:
-        raise ValueError('0 이상의 숫자를 입력해 주세요.')
+        raise ValueError(tr('0 이상의 숫자를 입력해 주세요.'))
     return value
 
 
 def calculate(quantity, average, additions):
-    quantity, average = number(quantity), number(average)
-    if quantity != quantity.to_integral_value():
-        raise ValueError('보유수량은 정수로 입력해 주세요.')
+    quantity, average = shares(quantity), number(average)
     cost, added = quantity * average, Decimal(0)
     for price, count in additions:
-        price, count = number(price), number(count)
-        if count != count.to_integral_value():
-            raise ValueError('매수 수량은 정수로 입력해 주세요.')
+        price, count = number(price), shares(count)
         if count and not price:
-            raise ValueError('매수 가격은 0보다 커야 합니다.')
+            raise ValueError(tr('매수 가격은 0보다 커야 합니다.'))
         added += price * count
         cost += price * count
         quantity += count
     if quantity <= 0:
-        raise ValueError('보유수량 또는 추가 매수 수량을 입력해 주세요.')
+        raise ValueError(tr('보유수량 또는 추가 매수 수량을 입력해 주세요.'))
     return quantity, cost, cost / quantity, added
 
 
@@ -153,8 +151,8 @@ class AverageCostView(tk.Frame):
         super().__init__(parent, bg=self.p['page'])
         self.data_provider, self.holdings, self.rows = data_provider, [], []
         self.pending, self.loading, self.narrow = None, True, None
-        self.currency = tk.StringVar(value='원')
-        self.last_currency='원'
+        self.currency = tk.StringVar(value=tr('원'))
+        self.last_currency=tr('원')
         self.quantity, self.average = tk.StringVar(value='0'), tk.StringVar(value='0.00')
         self.price_fields = []
         self.create_page()
@@ -175,9 +173,9 @@ class AverageCostView(tk.Frame):
     def create_page(self):
         header = tk.Frame(self, bg=self.p['page'])
         header.pack(fill='x', pady=(2, 12))
-        self.label(header, '투자 도구  /  평균단가 시뮬레이터', 10, 'muted').pack(anchor='w')
-        self.label(header, '추가 매수하면, 평단이 얼마나 바뀔까요?', 21, bold=True).pack(anchor='w', pady=(4, 2))
-        self.label(header, '내 보유종목으로 시작하고, 여러 매수 조건을 가볍게 비교해 보세요.', 11, 'muted').pack(anchor='w')
+        self.label(header, tr('투자 도구  /  평균단가 시뮬레이터'), 10, 'muted').pack(anchor='w')
+        self.label(header, tr('추가 매수하면, 평단이 얼마나 바뀔까요?'), 21, bold=True).pack(anchor='w', pady=(4, 2))
+        self.label(header, tr('내 보유종목으로 시작하고, 여러 매수 조건을 가볍게 비교해 보세요.'), 11, 'muted').pack(anchor='w')
         self.columns = tk.Frame(self, bg=self.p['page'])
         self.columns.pack(fill='x')
         self.columns.columnconfigure(0, weight=3, minsize=490)
@@ -190,7 +188,7 @@ class AverageCostView(tk.Frame):
         holding = Card(self.left, self.p)
         holding.pack(fill='x', pady=(0, 16))
         body = holding.body
-        self.section(body, '01', '현재 보유정보', '보유종목 선택 또는 직접 입력')
+        self.section(body, '01', tr('현재 보유정보'), tr('보유종목 선택 또는 직접 입력'))
         select_row = tk.Frame(body, bg=body.cget('bg'))
         select_row.pack(fill='x', pady=(10, 10))
         select_row.columnconfigure(0, weight=1)
@@ -206,11 +204,11 @@ class AverageCostView(tk.Frame):
                                     font=('맑은 고딕', 12), width=20)
         self.choices.grid(row=0, column=0, sticky='ew', padx=(0, 10))
         self.choices.bind('<<ComboboxSelected>>', self.load_holding)
-        SoftButton(select_row, '목록 갱신', self.refresh_holdings, self.p, width=95).grid(row=0, column=1)
+        SoftButton(select_row, tr('목록 갱신'), self.refresh_holdings, self.p, width=95).grid(row=0, column=1)
         fields = tk.Frame(body, bg=body.cget('bg'))
         fields.pack(fill='x')
         fields.columnconfigure((0, 1), weight=1, uniform='fields')
-        for column, title, variable, unit in ((0, '보유수량', self.quantity, '주'), (1, '현재 평균단가', self.average, '원')):
+        for column, title, variable, unit in ((0, tr('보유수량'), self.quantity, tr('주')), (1, tr('현재 평균단가'), self.average, tr('원'))):
             cell = tk.Frame(fields, bg=body.cget('bg'))
             cell.grid(row=0, column=column, sticky='ew', padx=(0, 8) if column==0 else (8, 0))
             self.label(cell, title, 11, 'muted').pack(anchor='w', pady=(0, 8))
@@ -219,9 +217,9 @@ class AverageCostView(tk.Frame):
             if column==1:self.price_fields.append(field)
         details = tk.Frame(body, bg=body.cget('bg'))
         details.pack(fill='x', pady=(8, 0))
-        self.source = self.label(details, '직접 입력 · 보유 정보를 입력해 주세요.', 10, 'muted')
+        self.source = self.label(details, tr('직접 입력 · 보유 정보를 입력해 주세요.'), 10, 'muted')
         self.source.pack(side='left', fill='x', expand=True)
-        self.currency_choice = ttk.Combobox(details, textvariable=self.currency, values=('원','USD'),
+        self.currency_choice = ttk.Combobox(details, textvariable=self.currency, values=(tr('원'),'USD'),
                     state='readonly', width=5, style='Average.TCombobox', font=('맑은 고딕', 10))
         self.currency_choice.pack(side='right')
         for combo in (self.choices, self.currency_choice):
@@ -233,24 +231,24 @@ class AverageCostView(tk.Frame):
         scenario = Card(self.left, self.p)
         scenario.pack(fill='x')
         body = scenario.body
-        self.section(body, '02', '추가 매수 시나리오', '원하는 만큼 매수 회차를 추가하세요')
+        self.section(body, '02', tr('추가 매수 시나리오'), tr('원하는 만큼 매수 회차를 추가하세요'))
         self.row_area = tk.Frame(body, bg=body.cget('bg'))
         self.row_area.pack(fill='x', pady=(12, 0))
-        SoftButton(body, '＋  매수 회차 추가', self.add_row, self.p, height=43).pack(fill='x', pady=(14, 0))
-        self.label(body, '입력한 조건은 오른쪽 결과에 바로 반영됩니다.', 10, 'muted').pack(anchor='w', pady=(13, 0))
+        SoftButton(body, tr('＋  매수 회차 추가'), self.add_row, self.p, height=43).pack(fill='x', pady=(14, 0))
+        self.label(body, tr('입력한 조건은 오른쪽 결과에 바로 반영됩니다.'), 10, 'muted').pack(anchor='w', pady=(13, 0))
 
         result = Card(self.right, self.p, self.p['result'])
         result.pack(fill='x')
         body = result.body
         self.label(body, 'SIMULATION', 10, 'accent', True).pack(anchor='w')
-        self.label(body, '예상 평균단가', 14, bold=True).pack(anchor='w', pady=(14, 4))
+        self.label(body, tr('예상 평균단가'), 14, bold=True).pack(anchor='w', pady=(14, 4))
         self.average_result = self.label(body, '—', 30, bold=True)
         self.average_result.pack(anchor='w')
-        self.delta = self.label(body, '조건을 입력하면 결과가 나타나요', 11, 'muted')
+        self.delta = self.label(body, tr('조건을 입력하면 결과가 나타나요'), 11, 'muted')
         self.delta.pack(anchor='w', pady=(6, 12))
         tk.Frame(body, height=1, bg=self.p['line']).pack(fill='x')
         self.result_values = {}
-        for key, title in (('quantity','예상 총수량'),('added','추가 필요금액'),('cost','예상 총매입액')):
+        for key, title in (('quantity',tr('예상 총수량')),('added',tr('추가 필요금액')),('cost',tr('예상 총매입액'))):
             row = tk.Frame(body, bg=body.cget('bg'))
             row.pack(fill='x', pady=(12, 0))
             self.label(row, title, 11, 'muted').pack(side='left')
@@ -261,13 +259,13 @@ class AverageCostView(tk.Frame):
         self.comparison.pack(fill='x', pady=(12, 0))
         self.comparison.bind('<Configure>', lambda e:self.draw_comparison())
         self.compare_values = None
-        self.status = self.label(body, '수량과 가격을 입력해 주세요.', 10, 'muted', wraplength=285)
+        self.status = self.label(body, tr('수량과 가격을 입력해 주세요.'), 10, 'muted', wraplength=285)
         self.status.pack(anchor='w', pady=(12, 0))
-        SoftButton(body, '다시 계산하기', self.run, self.p, primary=True, height=46).pack(fill='x', pady=(18, 0))
+        SoftButton(body, tr('다시 계산하기'), self.run, self.p, primary=True, height=46).pack(fill='x', pady=(18, 0))
         foot = tk.Frame(self.right, bg=self.p['page'])
         foot.pack(fill='x', padx=8, pady=18)
-        self.label(foot, '계산 전에 확인해 주세요', 11, bold=True).pack(anchor='w')
-        self.label(foot, '수수료·세금은 제외한 예상값입니다.\n입력한 가격으로 전량 체결된다고 가정합니다.\n실제 계좌나 주문에는 반영되지 않습니다.',
+        self.label(foot, tr('계산 전에 확인해 주세요'), 11, bold=True).pack(anchor='w')
+        self.label(foot, tr('수수료·세금은 제외한 예상값입니다.\n입력한 가격으로 전량 체결된다고 가정합니다.\n실제 계좌나 주문에는 반영되지 않습니다.'),
                    10, 'muted', wraplength=315).pack(anchor='w', pady=(8, 0))
 
     def section(self, parent, number_text, title, subtitle):
@@ -285,13 +283,13 @@ class AverageCostView(tk.Frame):
         frame.pack(fill='x', pady=(6, 0))
         heading = tk.Frame(frame, bg=self.p['card'])
         heading.pack(fill='x', pady=(0, 4))
-        row['label'] = self.label(heading, f'{len(self.rows):02d}차 매수', 11, bold=True)
+        row['label'] = self.label(heading, f"{len(self.rows):02d}{tr('차 매수')}", 11, bold=True)
         row['label'].pack(side='left')
-        SoftButton(heading, '삭제', lambda:self.remove_row(row), self.p, width=58, height=30).pack(side='right')
+        SoftButton(heading, tr('삭제'), lambda:self.remove_row(row), self.p, width=58, height=30).pack(side='right')
         fields = tk.Frame(frame, bg=self.p['card'])
         fields.pack(fill='x')
         fields.columnconfigure((0,1), weight=1, uniform='row')
-        for column, key, title, unit in ((0,'quantity','매수 수량','주'),(1,'price','매수 가격',self.currency.get())):
+        for column, key, title, unit in ((0,'quantity',tr('매수 수량'),tr('주')),(1,'price',tr('매수 가격'),self.currency.get())):
             cell = tk.Frame(fields, bg=self.p['card'])
             cell.grid(row=0, column=column, sticky='ew', padx=(0,8) if column==0 else (8,0))
             self.label(cell, title, 10, 'muted').pack(anchor='w', pady=(0,6))
@@ -307,7 +305,7 @@ class AverageCostView(tk.Frame):
         self.rows.remove(row)
         self.price_fields.remove(row['field'])
         row['frame'].destroy()
-        for index, remaining in enumerate(self.rows, 1):remaining['label'].configure(text=f'{index:02d}차 매수')
+        for index, remaining in enumerate(self.rows, 1):remaining['label'].configure(text=f"{index:02d}{tr('차 매수')}")
         self.changed()
 
     def changed(self, *args):
@@ -323,14 +321,14 @@ class AverageCostView(tk.Frame):
                 prices=[number(v.get() or 0) for v in variables]
                 if any(prices):
                     fx=number((self.data_provider() or {}).get('fx') or 0)
-                    if fx<=0:raise ValueError('비중계산에서 현재 환율을 먼저 입력해 주세요. 입력된 가격도 함께 환산합니다.')
-                    multiplier=fx if selected=='원' else 1/fx
+                    if fx<=0:raise ValueError(tr('비중계산에서 현재 환율을 먼저 입력해 주세요. 입력된 가격도 함께 환산합니다.'))
+                    multiplier=fx if selected==tr('원') else 1/fx
                     self.loading=True
                     for variable,value in zip(variables,prices):variable.set(f'{value*multiplier:,.2f}')
                     self.loading=False
             except (ValueError,InvalidOperation) as error:
                 self.loading=True;self.currency.set(self.last_currency);self.loading=False
-                messagebox.showwarning('통화 변경',str(error),parent=self.winfo_toplevel());return
+                messagebox.showwarning(tr('통화 변경'),str(error),parent=self.winfo_toplevel());return
         self.last_currency=selected
         for field in self.price_fields:
             field.unit.configure(text=self.currency.get())
@@ -340,10 +338,10 @@ class AverageCostView(tk.Frame):
     def refresh_holdings(self):
         data = self.data_provider() or {}
         self.holdings = [dict(r) for r in data.get('holdings',[]) if not r.get('manual')
-                         and r.get('quantity',0)>0 and r.get('purchase') is not None]
-        labels = ['직접 입력으로 계산하기']
+                         and number(r.get('quantity',0))>0 and r.get('purchase') is not None]
+        labels = [tr('직접 입력으로 계산하기')]
         for row in self.holdings:
-            broker = {'kiwoom':'키움','kis':'한투'}.get(row.get('broker'),'직접입력')
+            broker = {'kiwoom':tr('키움'),'kis':tr('한투')}.get(row.get('broker'),tr('직접입력'))
             labels.append(f"{broker} · {row.get('name',row['symbol'])} ({row['symbol']})")
         self.choices.configure(values=labels)
         self.choices.current(0)
@@ -356,30 +354,31 @@ class AverageCostView(tk.Frame):
             row['price'].set('0.00');row['quantity'].set('0')
         self.quantity.set('0');self.average.set('0.00')
         self.currency_choice.configure(state='readonly')
-        self.source.configure(text='직접 입력 · 같은 통화로 가격을 입력하세요.')
+        self.source.configure(text=tr('직접 입력 · 같은 통화로 가격을 입력하세요.'))
         if index>0:
             row = self.holdings[index-1]
             try:
                 q, cost = number(row['quantity']), number(row['purchase'])
-                if q<=0 or q!=q.to_integral_value():raise ValueError()
-                self.quantity.set(f'{q:,.0f}');self.average.set(f'{cost/q:,.2f}')
-                self.currency.set('USD' if row.get('market')=='us' else '원')
+                if q<=0:raise ValueError()
+                self.quantity.set(display_shares(q));self.average.set(f'{cost/q:,.2f}')
+                self.currency.set('USD' if row.get('market')=='us' else tr('원'))
                 self.currency_choice.configure(state='readonly')
                 at = row.get('at','')
                 try:at=datetime.fromisoformat(at).astimezone().strftime('%m.%d %H:%M')
-                except (ValueError,TypeError):at='시각 미확인'
-                self.source.configure(text=f'보유자료 {at} 기준 · 매입액 ÷ 수량')
+                except (ValueError,TypeError):at=tr('시각 미확인')
+                self.source.configure(text=f"{tr('보유자료 ')}{at}{tr(' 기준 · 매입액 ÷ 수량')}")
             except (ValueError,KeyError,InvalidOperation):
-                self.source.configure(text='보유수량·매입액 확인 필요 · 직접 입력 가능')
+                self.source.configure(text=tr('보유수량·매입액 확인 필요 · 직접 입력 가능'))
         self.loading = False
         self.run()
 
     def money(self, value):
-        return f"{value:,.2f} {'USD' if self.currency.get()=='USD' else '원'}"
+        return f"{value:,.2f} {('USD' if self.currency.get() == 'USD' else tr('원'))}"
 
-    def show_empty(self, message='수량과 가격을 입력해 주세요.', error=False):
+    def show_empty(self, message=None, error=False):
+        if message is None:message=tr('수량과 가격을 입력해 주세요.')
         self.average_result.configure(text='—')
-        self.delta.configure(text='조건을 입력하면 결과가 나타나요', fg=self.p['muted'])
+        self.delta.configure(text=tr('조건을 입력하면 결과가 나타나요'), fg=self.p['muted'])
         for widget in self.result_values.values():widget.configure(text='—')
         self.status.configure(text=message, fg=self.p['error' if error else 'muted'])
         self.compare_values = None
@@ -395,25 +394,25 @@ class AverageCostView(tk.Frame):
             self.average_result.configure(text=self.money(avg), font=('맑은 고딕', 27 if len(self.money(avg))<17 else 20,'bold'))
             if old:
                 change = (avg/old-1)*100
-                self.delta.configure(text=f'현재 평단 대비 {change:+.2f}%', fg=self.p['good' if change<0 else 'accent'])
-            else:self.delta.configure(text='신규 매수 기준', fg=self.p['accent'])
-            self.result_values['quantity'].configure(text=f'{q:,.0f}주')
+                self.delta.configure(text=f"{tr('현재 평단 대비 ')}{change:+.2f}%", fg=self.p['good' if change<0 else 'accent'])
+            else:self.delta.configure(text=tr('신규 매수 기준'), fg=self.p['accent'])
+            self.result_values['quantity'].configure(text=f"{display_shares(q)}{tr('주')}")
             self.result_values['added'].configure(text=self.money(added))
             self.result_values['cost'].configure(text=self.money(cost))
-            self.status.configure(text='입력값 반영 완료 · 평균단가는 소수 2자리 기준',fg=self.p['muted'])
+            self.status.configure(text=tr('입력값 반영 완료 · 평균단가는 소수 2자리 기준'),fg=self.p['muted'])
             self.compare_values = old, avg
             self.draw_comparison()
         except (InvalidOperation,ValueError,ArithmeticError) as error:
             empty = self.quantity.get() in ('0','') and all(r['quantity'].get() in ('0','') for r in self.rows)
-            self.show_empty('수량과 가격을 입력해 주세요.' if empty else
-                (str(error) if isinstance(error,ValueError) else '숫자 입력을 확인해 주세요.'), not empty)
+            self.show_empty(tr('수량과 가격을 입력해 주세요.') if empty else
+                (str(error) if isinstance(error,ValueError) else tr('숫자 입력을 확인해 주세요.')), not empty)
 
     def draw_comparison(self):
         canvas = self.comparison
         canvas.delete('all')
         width = max(100,canvas.winfo_width())
         maximum = max(self.compare_values) if self.compare_values else Decimal(1)
-        for i,title in enumerate(('현재','예상')):
+        for i,title in enumerate((tr('현재'),tr('예상'))):
             y=i*52
             value = self.compare_values[i] if self.compare_values else None
             canvas.create_text(0,y+8,text=title,anchor='w',fill=self.p['muted'],font=('맑은 고딕',10))

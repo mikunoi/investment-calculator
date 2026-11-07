@@ -1,6 +1,13 @@
-# 변경 이력
+# Changelog / 변경 이력
+
+## 1.8.0
+- Renamed to mikunoi_Stock_Calculator / 앱 표시 이름 변경
+- Korean / US English UI, persisted across restarts / 언어 저장
+- Fractional shares up to 8 decimal places / 국내·해외 소수점 수량
+- Exact quantity strings in storage and spreadsheet export / 수량 정밀도 보존
+- Bilingual import formats, installer and documentation / 한영 양식·설치 안내
+- Ten isolated regression checks pass / 격리 회귀검사 10개 통과
 
 ## 1.7.0
-- 다크/라이트/메트릭스 및 마지막 테마 유지
-- MIT 라이선스로 첫 GitHub 공개 배포
-- 목표를 내 자산에 저장하는 기능은 보류
+- Dark / Light / Matrix theme persistence
+- Initial MIT GitHub release

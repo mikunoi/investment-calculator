@@ -1,3 +1,4 @@
+from i18n import tr
 """Allocation preview and shared shortage rendering helpers."""
 import re
 import tkinter as tk
@@ -41,7 +42,7 @@ def hatch_sector(image, bounds, start, extent, scale):
 
 def preview(owner, image, palette):
     parent=owner.winfo_toplevel()
-    window=tk.Toplevel(parent);window.withdraw();window.title('비중계산 이미지 미리보기')
+    window=tk.Toplevel(parent);window.withdraw();window.title(tr('비중계산 이미지 미리보기'))
     window.configure(bg=palette['page']);window.transient(parent)
     width=min(1100,window.winfo_screenwidth()-80)
     height=min(850,window.winfo_screenheight()-100)
@@ -49,16 +50,16 @@ def preview(owner, image, palette):
     y=max(0,min(parent.winfo_rooty()+(parent.winfo_height()-height)//2,window.winfo_screenheight()-height))
     window.geometry(f'{width}x{height}+{x}+{y}')
     actions=tk.Frame(window,bg=palette['page']);actions.pack(fill='x',padx=18,pady=12)
-    tk.Label(actions,text='목표 설정과 차트를 확인한 후 저장하세요.',font=('맑은 고딕',12),bg=palette['page'],fg=palette['text']).pack(side='left')
+    tk.Label(actions,text=tr('목표 설정과 차트를 확인한 후 저장하세요.'),font=('맑은 고딕',12),bg=palette['page'],fg=palette['text']).pack(side='left')
     def save():
-        path=filedialog.asksaveasfilename(parent=window,title='비중계산 이미지 저장',defaultextension='.png',
-            filetypes=[('PNG 이미지','*.png')],initialfile='비중계산_'+datetime.now().strftime('%Y%m%d_%H%M%S')+'.png')
+        path=filedialog.asksaveasfilename(parent=window,title=tr('비중계산 이미지 저장'),defaultextension='.png',
+            filetypes=[(tr('PNG 이미지'),'*.png')],initialfile=tr('비중계산_')+datetime.now().strftime('%Y%m%d_%H%M%S')+'.png')
         if not path:return
         try:
             image.save(path,format='PNG')
-            messagebox.showinfo('이미지 저장','PNG 이미지를 저장했습니다.',parent=window)
-        except Exception as error:messagebox.showerror('저장 실패',str(error),parent=window)
-    SoftButton(actions,'PNG 저장',save,palette,primary=True,width=120,height=40).pack(side='right')
+            messagebox.showinfo(tr('이미지 저장'),tr('PNG 이미지를 저장했습니다.'),parent=window)
+        except Exception as error:messagebox.showerror(tr('저장 실패'),str(error),parent=window)
+    SoftButton(actions,tr('PNG 저장'),save,palette,primary=True,width=120,height=40).pack(side='right')
     content=tk.Frame(window,bg=palette['page']);content.pack(fill='both',expand=True,padx=16,pady=(0,16))
     canvas=tk.Canvas(content,bg=palette['page'],highlightthickness=0)
     bar=SlimScrollbar(content,orient='vertical',command=canvas.yview)
