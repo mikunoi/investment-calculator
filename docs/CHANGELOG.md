@@ -1,3 +1,9 @@
+# 1.8.2 — 2026-11-08
+- Redesigned update dialog with rounded card/buttons, version pill, clean notes, app icon and progress visible only during download.
+- Added persistent seven-day reminder suppression and a top-right Update button after deferral; manual reopening works during suppression.
+- Fixed packaged HTTPS initialization: include the public certificate resource required by the build Python distribution. TLS verification remains enabled.
+- 1.8.1 startup update checks silently failed in the frozen executable; install 1.8.2 manually once if using that build.
+
 # Changelog / 변경 이력
 
 ## 1.8.0

@@ -8,6 +8,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Rust build failed' }
     & $Python -m PyInstaller --noconfirm --windowed --onedir --name CalculatorUI --distpath dist --workpath build --specpath . --paths ui --icon assets/matrix-icon.ico --add-data "assets/matrix-icon.ico;assets" --add-data "ui/translations.json;." --add-data "generated/InvestmentCalculator-source.txt;source" ui/main.py
     if ($LASTEXITCODE -ne 0) { throw 'UI build failed' }
+    # Some Python distributions patch ssl.py to load an adjacent certificate file.
+    # Bundle that public CA resource when present; standard Python needs no extra file.
+    $sslResource = & $Python -c "import pathlib,ssl; p=pathlib.Path(ssl.__file__).with_name('codex-rejected-cas.pem'); print(str(p) if p.is_file() else '')"
+    if ($sslResource) { Copy-Item -LiteralPath $sslResource -Destination 'dist/CalculatorUI/_internal/codex-rejected-cas.pem' -Force }
     New-Item -ItemType Directory -Force package/runtime,package/licenses | Out-Null
     # Rebuild only our staging runtime; removed dependencies must not linger in releases.
     $runtimeStage=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'package/runtime'))

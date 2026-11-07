@@ -289,5 +289,8 @@
   "설치파일 다운로드 및 무결성 확인 중…": "Downloading and verifying the installer…",
   "다운로드하지 못했습니다. 기존 프로그램은 유지됩니다. 다시 시도해 주세요.": "Download failed. Your existing app is unchanged. Please try again.",
   "업데이트를 시작하지 못했습니다. 기존 프로그램은 유지됩니다.": "Could not start the update. Your existing app is unchanged.",
-  "변경사항은 GitHub 릴리스에서 확인할 수 있습니다.": "See the GitHub release for details."
+  "변경사항은 GitHub 릴리스에서 확인할 수 있습니다.": "See the GitHub release for details.",
+  "7일 동안 보이지 않기": "Remind me in 7 days",
+  "업데이트": "Update",
+  "보류 설정을 저장하지 못했습니다. 다시 시도해 주세요.": "Could not save your reminder preference. Please try again."
 }

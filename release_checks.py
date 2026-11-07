@@ -135,12 +135,39 @@ class ReleaseChecks(unittest.TestCase):
             self.assertFalse(any(re.search('[가-힣]',t) for t in drawn))
         finally:app.close()
 
+    def test_update_snooze_and_reopen(self):
+        import app_update as u
+        app=App();app.withdraw();errors=[];app.report_callback_exception=lambda *e:errors.append(e)
+        updater=u.StartupUpdate(app);app.updater=updater
+        app.after_cancel(updater.job);updater.job=None
+        info={'tag':'v9.0.0','notes':'## 한국어\n- 변경사항\n## English\n- Improvements'}
+        try:
+            updater.show(info);app.update()
+            self.assertFalse(updater.progress.winfo_ismapped())
+            updater.dismiss(snooze=True)
+            self.assertGreater(u.snoozed_until(),time.time()+6.99*86400)
+            self.assertTrue(updater.header_button.winfo_exists())
+            updater.open_pending();app.update();self.assertTrue(updater.dialog.winfo_exists())
+            self.assertFalse(updater.cancel.is_set())
+            updater.dismiss()
+            app.language.set('US');app.change_language();app.update()
+            self.assertTrue(updater.header_button.winfo_exists())
+            updater.open_pending();app.update();updater.dismiss()
+            # A new app session must suppress the automatic popup but retain access.
+            second=u.StartupUpdate(app);app.after_cancel(second.job);second.job=None
+            second.messages.put(('release',info));second.poll()
+            self.assertIsNone(second.dialog);self.assertTrue(second.header_button.winfo_exists())
+            second.stop()
+            self.assertFalse(errors)
+            self.assertNotIn('##',u.notes_for_language(info['notes']))
+        finally:app.close()
+
     def test_update_release_validation(self):
         import app_update as u,io,hashlib
         payload=b'installer bytes'
         info={'tag_name':'v1.8.2','body':'## 한국어\n수정\n## English\nFix','assets':[{'name':'mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe','state':'uploaded','size':len(payload),'digest':'sha256:'+hashlib.sha256(payload).hexdigest(),'browser_download_url':'https://github.com/mikunoi/investment-calculator/releases/download/v1.8.2/mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe'}]}
         def check():
-            with patch.object(u,'urlopen',return_value=io.BytesIO(json.dumps(info).encode())):return u.release()
+            with patch.object(u,'VERSION','1.8.0'), patch.object(u,'urlopen',return_value=io.BytesIO(json.dumps(info).encode())):return u.release()
         self.assertIsNotNone(check())
         info['draft']=True;self.assertIsNone(check());info['draft']=False
         info['assets'][0]['browser_download_url']='https://example.com/setup.exe';self.assertIsNone(check())
