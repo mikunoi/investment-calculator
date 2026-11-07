@@ -78,7 +78,7 @@ class App(tk.Tk):
         from source_export import show_source_export
         for event in ('<Button-1>','<Return>','<space>'):
             self.creator.bind(event,lambda _:show_source_export(self))
-        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.2',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
+        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.3',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
         self.credit.pack(side='left')
         self.show('average')
         if getattr(self,'updater',None):self.updater.ensure_button()

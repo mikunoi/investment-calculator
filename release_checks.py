@@ -162,6 +162,34 @@ class ReleaseChecks(unittest.TestCase):
             self.assertNotIn('##',u.notes_for_language(info['notes']))
         finally:app.close()
 
+    def test_update_card_resize_and_retry(self):
+        import app_update as u
+        app=App();errors=[];app.report_callback_exception=lambda *e:errors.append(e)
+        updater=u.StartupUpdate(app);app.updater=updater
+        app.after_cancel(updater.job);updater.job=None
+        try:
+            updater.show({'tag':'v9.0.0','notes':'• A short change'});app.update()
+            before=updater.art_size
+            updater.progress['value']=77
+            with patch.object(u,'download',side_effect=OSError('offline')):
+                updater.begin_download()
+                self.assertEqual(float(updater.progress['value']),0)
+                until=time.monotonic()+2
+                while updater.downloading and time.monotonic()<until:app.update();time.sleep(.01)
+            app.update()
+            self.assertGreater(updater.art_size[1],before[1])
+            self.assertFalse(updater.update_button.disabled)
+            updater.dismiss();app.update();self.assertIsNone(updater.art_job)
+            self.assertFalse(errors)
+        finally:app.close()
+
+    def test_snooze_invalid_and_expired(self):
+        import app_update as u
+        path=u.DATA/'update-preferences.json';path.parent.mkdir(parents=True,exist_ok=True)
+        for text in ('broken','[]','{"snoozed_until":"NaN"}','{"snoozed_until":-1}'):
+            path.write_text(text,encoding='utf-8');self.assertEqual(u.snoozed_until(),0)
+        u.save_snooze(time.time()-1);self.assertLess(u.snoozed_until(),time.time())
+
     def test_update_release_validation(self):
         import app_update as u,io,hashlib
         payload=b'installer bytes'

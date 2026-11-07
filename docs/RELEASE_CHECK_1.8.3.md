@@ -1,0 +1,4 @@
+# 1.8.3 validation — 2026-11-08
+16 isolated regression tests passed in 5.068 seconds. Includes cached tabs, fractional shares, FX, targets, saved preferences, bilingual exports, update metadata/digest/cancellation, reminder persistence/reopening, invalid reminder data, retry progress reset and card resizing. 300 hidden Tk tab switches: 37.9 ms (not FPS).
+Optimization: repaint update artwork only on dimension changes, coalescing resize events; cancel pending drawing callbacks on dismissal. No animation or recurring release checks.
+Other PCs, abrupt power loss and complete user-driven internet update remain untested. Packaged native launch/close passed using isolated user data. Idle 3-second sample: 54.0 MB working set, 0 ms CPU; a single observation, not a performance guarantee. UI and Rust launcher both exited after closing. User installation stays at 1.8.2 for manual update testing.

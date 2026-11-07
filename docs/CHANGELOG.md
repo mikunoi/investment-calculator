@@ -1,3 +1,9 @@
+# 1.8.3 — 2026-11-08
+- Repaint the rounded update card only when its size changes; coalesce resize events. Fix background sizing when download progress expands.
+- Reset progress before retry and cancel pending drawing callbacks when closing.
+- Atomically replace each data backup file and include the seven-day reminder preference.
+- Full regression and packaged checks required before publication; no trading changes.
+
 # 1.8.2 — 2026-11-08
 - Redesigned update dialog with rounded card/buttons, version pill, clean notes, app icon and progress visible only during download.
 - Added persistent seven-day reminder suppression and a top-right Update button after deferral; manual reopening works during suppression.

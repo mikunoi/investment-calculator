@@ -20,7 +20,7 @@ from i18n import tr
 import i18n
 from scroll_support import SlimScrollbar
 
-VERSION = '1.8.2'
+VERSION = '1.8.3'
 REPO = 'mikunoi/investment-calculator'
 API = 'https://api.github.com/repos/' + REPO + '/releases/latest'
 DATA = Path(os.environ['LOCALAPPDATA']) / 'IndependentInvestmentCalculator'
@@ -153,7 +153,7 @@ class StartupUpdate:
     def __init__(self, app):
         self.app = app;self.messages = queue.Queue();self.cancel = threading.Event()
         self.job = None;self.dialog = None;self.downloading = False;self.info=None
-        self.header_button=None
+        self.header_button=None;self.art_job=None;self.art_size=None
         self.job = app.after(1000, self.start)
 
     def start(self):
@@ -247,11 +247,22 @@ class StartupUpdate:
         snooze.bind('<Button-1>',lambda e:self.dismiss(snooze=True));snooze.bind('<Return>',lambda e:self.dismiss(snooze=True))
         win.bind('<Escape>',lambda e:self.dismiss())
         win.protocol('WM_DELETE_WINDOW',self.dismiss);win.update_idletasks()
-        w,h=win.winfo_reqwidth(),win.winfo_reqheight()
-        backdrop=Image.new('RGBA',(w*3,h*3))
-        ImageDraw.Draw(backdrop).rounded_rectangle((2,2,w*3-3,h*3-3),radius=22*3,fill=p['card'],outline='#526D84',width=4)
-        self.card_art=ImageTk.PhotoImage(backdrop.resize((w,h),Image.Resampling.LANCZOS))
-        shell.create_image(0,0,image=self.card_art,anchor='nw')
+        self.art_size=None
+        self.art_item=shell.create_image(0,0,anchor='nw')
+        def paint():
+            self.art_job=None
+            if not win.winfo_exists():return
+            w,h=shell.winfo_width(),shell.winfo_height()
+            if (w,h)==self.art_size:return
+            self.art_size=w,h
+            backdrop=Image.new('RGBA',(w*3,h*3))
+            ImageDraw.Draw(backdrop).rounded_rectangle((2,2,w*3-3,h*3-3),radius=22*3,fill=p['card'],outline='#526D84',width=4)
+            self.card_art=ImageTk.PhotoImage(backdrop.resize((w,h),Image.Resampling.LANCZOS),master=win)
+            shell.itemconfigure(self.art_item,image=self.card_art)
+        def resize(event):
+            if self.art_job is None:self.art_job=win.after_idle(paint)
+        shell.bind('<Configure>',resize)
+        paint()
         x=max(0,self.app.winfo_rootx()+(self.app.winfo_width()-win.winfo_reqwidth())//2)
         y=max(0,min(win.winfo_screenheight()-win.winfo_reqheight()-40,self.app.winfo_rooty()+(self.app.winfo_height()-win.winfo_reqheight())//2))
         win.geometry(f'+{x}+{y}');win.deiconify();win.grab_set()
@@ -281,6 +292,7 @@ class StartupUpdate:
     def begin_download(self):
         if self.downloading:return
         self.downloading=True;self.update_button.config(state='disabled')
+        self.progress['value']=0
         self.download_area.pack(fill='x',before=self.buttons,pady=(0,8))
         self.status.config(text=tr('설치파일 다운로드 및 무결성 확인 중…'))
         info,cancel,messages=self.info,self.cancel,self.messages
@@ -296,9 +308,11 @@ class StartupUpdate:
             if file_digest(installer)!=self.info['digest']:
                 raise ValueError('Installer integrity check failed')
             backup=DATA/'update-backup';backup.mkdir(exist_ok=True)
-            for name in ('portfolio.json','goals.json','settings.json'):
+            for name in ('portfolio.json','goals.json','settings.json','update-preferences.json'):
                 source=DATA/name
-                if source.is_file():shutil.copy2(source,backup/name)
+                if source.is_file():
+                    pending=backup/(name+'.tmp')
+                    shutil.copy2(source,pending);pending.replace(backup/name)
             if not getattr(sys,'frozen',False):raise RuntimeError('Updates require the installed application')
             install=Path(sys.executable).resolve().parent.parent
             if not (install/'mikunoi_Stock_Calculator.exe').is_file():raise RuntimeError('Installation path is invalid')
@@ -311,5 +325,7 @@ class StartupUpdate:
 
     def stop(self):
         self.cancel.set()
+        if self.art_job is not None and self.dialog and self.dialog.winfo_exists():
+            self.dialog.after_cancel(self.art_job);self.art_job=None
         if self.job is not None:
             self.app.after_cancel(self.job);self.job=None

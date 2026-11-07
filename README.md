@@ -82,3 +82,8 @@ The app checks GitHub once at startup. When a newer release is available, a dial
 팝업의 `7일 동안 보이지 않기`는 재시작 후에도 유지됩니다. `나중에` 또는 7일 보류 후 우측 상단 `업데이트` 버튼에서 다시 열 수 있습니다. 1.8.1 설치본은 업데이트 조회 오류가 있어 1.8.2를 한 번 직접 설치하세요.
 
 Choose **Remind me in 7 days** to pause automatic prompts across restarts. **Update** at the top right reopens the dialog after deferral. Version 1.8.1 has a packaged HTTPS issue; manually install 1.8.2 once to fix it.
+
+### 1.8.3 검증 / Validation
+추가 디버깅: 다운로드 진행 영역의 팝업 배경 크기 보정, 재시도 진행률 초기화, 7일 보류 설정을 포함한 파일별 원자적 백업. 격리 회귀검사 16개 통과.
+
+Additional fixes: update card resizing during downloads, progress reset on retry, atomic per-file backups including reminder settings. 16 isolated regression tests passed. Other-PC and power-loss recovery remain untested.
