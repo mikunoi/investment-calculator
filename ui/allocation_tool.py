@@ -128,7 +128,7 @@ class AllocationView(tk.Frame):
         self.label(fxrow,tr('원'),11,muted=True).pack(side='left')
         SoftButton(fxrow,tr('환율 적용'),self.apply_fx,self.p,width=100,height=36).pack(side='right')
         row = tk.Frame(body, bg=self.p['card']); row.pack(fill='x')
-        self.label(row, tr('추가 예정 예수금'), 11, muted=True).pack(anchor='w', pady=(2, 3))
+        self.label(row, tr('예수금 조정 (+입금 / -출금)'), 11, muted=True).pack(anchor='w', pady=(2, 3))
         extra_field=NumberField(row, self.extra, tr('원'), self.p);extra_field.pack(fill='x')
         extra_field.entry.bind('<KeyRelease>',lambda e:format_money(extra_field.entry,self.extra),add='+')
         self.total_label = self.label(body, '', 11, muted=True); self.total_label.pack(anchor='w', pady=(5, 0))
@@ -204,7 +204,8 @@ class AllocationView(tk.Frame):
         style.configure('Allocation.Treeview.Heading',background=self.p['field'],foreground=self.p['muted'],font=('맑은 고딕',10),padding=6)
         style.layout('Allocation.Treeview',[('Treeview.treearea',{'sticky':'nswe'})])
         style.layout('Allocation.Treeview.Heading',[('Treeheading.padding',{'sticky':'nswe','children':[('Treeheading.text',{'sticky':'we'})]})])
-        cols=('symbol','name','purchase','evaluation','weight')
+        cols=('symbol','name','purchase','evaluation','target','weight')
+        self.legend_cell_labels=[];self.legend_cell_colors={};self.legend_paint_job=None
         self.legend=ttk.Treeview(legend_frame,columns=cols,show='tree headings',height=7,selectmode='browse',style='Allocation.Treeview')
         self.legend.heading('#0',text='');self.legend.column('#0',width=28,minwidth=28,stretch=False)
         self.selected_key=None;self.legend_keys={}
@@ -213,18 +214,18 @@ class AllocationView(tk.Frame):
         self.name_tip=None;self.name_tip_item=None
         self.legend.bind('<Motion>',self.show_name_tip)
         self.legend.bind('<Leave>',lambda e:self.hide_name_tip())
-        self.legend.bind('<Configure>',lambda e:self.hide_name_tip())
-        self.bind('<Destroy>',lambda e:self.hide_name_tip() if e.widget==self else None,add='+')
+        self.legend.bind('<Configure>',lambda e:(self.hide_name_tip(),self.schedule_legend_colors()))
+        self.bind('<Destroy>',self.cleanup_legend,add='+')
         style.map('Allocation.Treeview',background=[('selected',self.p['button'])],foreground=[('selected','#FFFFFF')])
         self.enable_inner_scroll(self.legend)
-        for col,title,width in zip(cols,(tr('종목코드'),tr('종목명'),tr('매입금액'),tr('평가금액'),tr('비중')),(90,180,115,115,75)):
+        for col,title,width in zip(cols,(tr('종목코드'),tr('종목명'),tr('매입금액'),tr('평가금액'),tr('목표금액'),tr('비중')),(78,140,100,100,100,75)):
             self.legend.heading(col,text=title);self.legend.column(col,width=width,minwidth=60,anchor='center' if col=='symbol' else 'w' if col=='name' else 'e')
         bar=SlimScrollbar(legend_frame,orient='vertical',command=self.legend.yview)
-        self.legend.configure(yscrollcommand=lambda first,last:(self.hide_name_tip(),bar.set(first,last)))
+        self.legend.configure(yscrollcommand=lambda first,last:(self.hide_name_tip(),bar.set(first,last),self.schedule_legend_colors()))
         horizontal=SlimScrollbar(legend_frame,orient='horizontal',command=self.legend.xview)
-        self.legend.configure(xscrollcommand=lambda first,last:(self.hide_name_tip(),horizontal.set(first,last)))
+        self.legend.configure(xscrollcommand=lambda first,last:(self.hide_name_tip(),horizontal.set(first,last),self.schedule_legend_colors()))
         horizontal.pack(side='bottom',fill='x');bar.pack(side='right',fill='y');self.legend.pack(fill='both',expand=True)
-        self.label(body,tr('매입금액: 현재 원금 · 평가금액/비중: 목표 반영 후 · 음영: 변경 종목'),10,muted=True).pack(anchor='w',pady=(6,0))
+        self.label(body,tr('매입·평가: 현재 자산 · 목표금액·비중: 목표 반영 후'),10,muted=True).pack(anchor='w',pady=(6,0))
         self.label(self,tr('시뮬레이션 전용 · 수수료와 세금 제외 · 실제 주문이나 계좌에 반영되지 않습니다.'),10,muted=True).pack(anchor='w',pady=(10,12))
         self.percent.trace_add('write',lambda *a:self.convert('percent'))
         self.amount.trace_add('write',lambda *a:self.convert('amount'))
@@ -407,7 +408,7 @@ class AllocationView(tk.Frame):
             self.target_warning.config(text=warning)
             self.target_warning.pack_forget()
             if warning:self.target_warning.pack(before=self.result_list.master,anchor='w',pady=(4,6))
-            self.capital_label.config(text=f"{tr('현재 운용자금 평가액  ')}{evaluation_capital(self.data):,.0f}{tr('원')}")
+            self.capital_label.config(text=f"{tr('조정 후 운용자금 평가액  ') if cash_adjustment(self.extra.get()) else tr('현재 운용자금 평가액  ')}{capital:,.0f}{tr('원')}")
             funding=next(r['funding'] for r in rows if r['key']==('cash',))
             self.funding_line.pack_forget()
             if cash<0 and funding is not None:
@@ -427,7 +428,7 @@ class AllocationView(tk.Frame):
                 self.result_list.itemconfig('end',fg=('#159C65' if delta>0 else '#E5484D' if delta<0 else self.p['text']))
             self.rows=rows
             self.legend.delete(*self.legend.get_children())
-            self.legend_icons=[];self.legend_keys={}
+            self.legend_icons=[];self.legend_keys={};self.legend_cell_colors={}
             if self.selected_key not in [r['key'] for r in self.rows]:self.selected_key=None
             for index,row in enumerate(self.rows):
                 color=theme.chart_color(index,row['key']==('cash',),COLORS[index%len(COLORS)],theme.CURRENT)
@@ -435,12 +436,14 @@ class AllocationView(tk.Frame):
                 icon=ImageTk.PhotoImage(icon.resize((12,12),Image.Resampling.LANCZOS));self.legend_icons.append(icon)
                 tag='row'+str(index)
                 self.legend.tag_configure(tag,background=self.p['soft'] if row['changed'] else self.p['card'],foreground=self.p['text'])
-                item=self.legend.insert('', 'end',image=icon,values=(row['symbol'] or '—',row['name'],f"{number(self.holdings[row['key'][1]].get('krw')) if row['key'][0]=='holding' else number(self.data.get('cash')) if row['key']==('cash',) else ZERO:,.0f}",f"{row['evaluation']:,.0f}",f"{row['weight']:.2f}%"),tags=(tag,))
+                item=self.legend.insert('', 'end',image=icon,values=(row['symbol'] or '—',row['name'],f"{number(self.holdings[row['key'][1]].get('krw')) if row['key'][0]=='holding' else number(self.data.get('cash')) if row['key']==('cash',) else ZERO:,.0f}",f"{number(self.holdings[row['key'][1]].get('evaluation_krw')) if row['key'][0]=='holding' else number(self.data.get('cash')) if row['key']==('cash',) else ZERO:,.0f}",f"{row['evaluation']:,.0f}",f"{row['weight']:.2f}%"),tags=(tag,))
                 self.legend_keys[item]=row['key']
+                original=number(self.holdings[row['key'][1]].get('evaluation_krw')) if row['key'][0]=='holding' else number(self.data.get('cash')) if row['key']==('cash',) else ZERO
+                self.legend_cell_colors[item]=('#159C65' if row['evaluation']>original else '#E5484D' if row['evaluation']<original else self.p['text'])
                 if row['key']==self.selected_key:self.legend.selection_set(item)
             total=sum(row['purchase' if self.basis.get()=='purchase' else 'evaluation'] for row in rows)
             self.chart_note.config(text=((cash_text+f"{tr('\n필요 입금 반영 후 예상 포트폴리오 · 평가자산+현금 ')}{display_capital:,.0f}{tr('원')}" ) if cash<0 else f"{tr('차트 합계 ')}{total:,.0f}{tr('원 · 목표 비중은 평가자산+현금 ')}{capital:,.0f}{tr('원 기준\n현재 평가가격으로 거래하는 가정')}"))
-            self.draw_chart()
+            self.draw_chart();self.schedule_legend_colors()
         except (InvalidOperation,ValueError,TypeError) as error:
             self.total_label.config(text=str(error) if isinstance(error,ValueError) else tr('대시보드의 운용자금과 평가자료를 확인해 주세요.'))
             self.capital_label.config(text=tr('현재 운용자금 평가액 · 환율 입력 필요') if self.data.get('fx_missing') else tr('현재 운용자금 평가액  0원 · 내 자산에서 입력해 주세요.'))
@@ -448,7 +451,7 @@ class AllocationView(tk.Frame):
             self.target_warning.pack(before=self.result_list.master,anchor='w',pady=(4,6))
             self.target_warning.config(text=str(error) if isinstance(error,ValueError) else tr('입력값과 자료를 확인해 주세요.'))
             self.chart_note.config(text=str(error) if isinstance(error,ValueError) else tr('계산할 수 없는 상태입니다. 입력값과 자료를 확인해 주세요.'))
-            self.rows=[];self.legend.delete(*self.legend.get_children());self.result_list.delete(0,'end')
+            self.rows=[];self.legend.delete(*self.legend.get_children());self.result_list.delete(0,'end');self.schedule_legend_colors()
             for plan in self.plans:self.result_list.insert('end',plan['name']+tr('  ·  계산 불가'))
             self.draw_chart()
 
@@ -481,6 +484,46 @@ class AllocationView(tk.Frame):
         tip.geometry(f'+{x}+{y}');tip.deiconify()
         self.name_tip=tip;self.name_tip_item=item
 
+    def cleanup_legend(self,event):
+        if event.widget!=self:return
+        self.hide_name_tip()
+        if self.legend_paint_job is not None:
+            self.after_cancel(self.legend_paint_job);self.legend_paint_job=None
+
+    def schedule_legend_colors(self):
+        if self.legend_paint_job is None:
+            self.legend_paint_job=self.after_idle(self.paint_legend_colors)
+
+    def paint_legend_colors(self):
+        self.legend_paint_job=None
+        for label in self.legend_cell_labels:label.destroy()
+        self.legend_cell_labels=[]
+        for item in self.legend.get_children():
+            color=self.legend_cell_colors.get(item,self.p['text'])
+            selected=item in self.legend.selection()
+            tags=self.legend.item(item,'tags')
+            bg=self.p['button'] if selected else (self.legend.tag_configure(tags[0],'background') if tags else self.p['card'])
+            for col in ('target','weight'):
+                box=self.legend.bbox(item,col)
+                if not box:continue
+                x,y,w,h=box
+                if x<0 or x+w>self.legend.winfo_width():continue
+                label=tk.Label(self.legend,text=self.legend.set(item,col),fg=color,bg=bg,anchor='e',font=('맑은 고딕',11),padx=3,borderwidth=0)
+                label.place(x=x,y=y,width=w,height=h)
+                label.bind('<Button-1>',lambda e,i=item:self.click_legend_cell(i))
+                label.bind('<MouseWheel>',lambda e:self.scroll_legend_cells(e))
+                self.legend_cell_labels.append(label)
+
+    def click_legend_cell(self,item):
+        if item in self.legend.selection():self.legend.selection_remove(item)
+        else:self.legend.selection_set(item);self.legend.focus(item)
+        self.select_legend()
+        return 'break'
+
+    def scroll_legend_cells(self,event):
+        self.legend.yview_scroll(-1 if event.delta>0 else 1,'units')
+        return 'break'
+
     def toggle_legend(self,event):
         self.hide_name_tip()
         if self.legend.identify_region(event.x,event.y) not in ('tree','cell'):return
@@ -495,6 +538,7 @@ class AllocationView(tk.Frame):
             return 'break'
 
     def select_legend(self,event=None):
+        self.schedule_legend_colors()
         selected=self.legend.selection()
         key=self.legend_keys.get(selected[0]) if selected else None
         if key!=self.selected_key:

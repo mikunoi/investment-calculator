@@ -48,6 +48,10 @@ class App(tk.Tk):
         if saved_mode not in ('default','toss','matrix'):saved_mode='default'
         theme.select(saved_mode);self.p=PALETTES[theme.CURRENT];self.configure(bg=self.p['page'])
         self.build_ui()
+        self.updater=None
+        if getattr(sys,'frozen',False):
+            from app_update import StartupUpdate
+            self.updater=StartupUpdate(self)
 
     def build_ui(self):
         self.modes={tr('다크'):'default',tr('라이트'):'toss',tr('메트릭스'):'matrix'}
@@ -74,7 +78,7 @@ class App(tk.Tk):
         from source_export import show_source_export
         for event in ('<Button-1>','<Return>','<space>'):
             self.creator.bind(event,lambda _:show_source_export(self))
-        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.0',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
+        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.1',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
         self.credit.pack(side='left')
         self.show('average')
 
@@ -185,6 +189,7 @@ class App(tk.Tk):
     def close(self):
         if self.closing:return
         self.closing=True
+        if getattr(self,'updater',None):self.updater.stop()
         # Widgets own their registered Tcl callbacks; destroy them through their owners.
         self.destroy()
         self.pages.clear()

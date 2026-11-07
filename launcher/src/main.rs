@@ -5,8 +5,9 @@ extern "system" { fn MessageBoxW(hwnd: isize, text: *const u16, title: *const u1
 fn main() {
     let result = (|| -> std::io::Result<()> {
         let base = env::current_exe()?.parent().unwrap().to_path_buf();
-        Command::new(base.join("runtime").join("CalculatorUI.exe"))
-            .current_dir(&base).creation_flags(0x08000000).spawn()?;
+        let status = Command::new(base.join("runtime").join("CalculatorUI.exe"))
+            .current_dir(&base).creation_flags(0x08000000).status()?;
+        if !status.success() { return Err(std::io::Error::other(format!("Application exited with {}", status))); }
         Ok(())
     })();
     if let Err(error) = result {

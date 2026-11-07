@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C23B1E36-B85D-4A97-89EC-24FA09373CD8}
 AppName=mikunoi_Stock_Calculator
-AppVersion=1.8.0
+AppVersion=1.8.1
 AppPublisher=mikunoi
 DefaultDirName={localappdata}\Programs\IndependentInvestmentCalculator
 DefaultGroupName=mikunoi_Stock_Calculator
@@ -10,7 +10,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir=releases
-OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.0-x64
+OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.1-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -39,6 +39,7 @@ Name: "{group}\{cm:UninstallApp}"; Filename: "{uninstallexe}"; IconFilename: "{a
 Name: "{userdesktop}\mikunoi_Stock_Calculator"; Filename: "{app}\mikunoi_Stock_Calculator.exe"; Tasks: desktopicon; IconFilename: "{app}\InvestmentCalculator.ico"; AppUserModelID: "mikunoi.InvestmentCalculator"
 [Run]
 Filename: "{app}\mikunoi_Stock_Calculator.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\mikunoi_Stock_Calculator.exe"; Flags: nowait; Check: IsAppUpdate
 [UninstallDelete]
 ; Only empty application directories: never delete unknown/user files recursively.
 Type: dirifempty; Name: "{app}\runtime\_internal\PIL"
@@ -55,6 +56,7 @@ var
   ActionPage: TInputOptionWizardPage;
   DeleteDataBox: TNewCheckBox;
   RemovalFinished: Boolean;
+  AppUpdateMode: Boolean;
 
 function Localize(Korean, English: String): String;
 begin
@@ -71,12 +73,13 @@ var
   RegisteredCommand: String;
 begin
   Result := True;
+  AppUpdateMode := ExpandConstant('{param:APPUPDATE|0}') = '1';
   ReinstallFinished := False;
   OldUninstaller := '';
   OldLocation := '';
   if RegQueryStringValue(HKCU64, ProductUninstallKey, 'UninstallString', RegisteredCommand) then
   begin
-    if WizardSilent then
+    if WizardSilent and not AppUpdateMode then
     begin
       MsgBox(Localize('기존 mikunoi_Stock_Calculator가 있습니다. 재설치 동의가 필요하므로 설치파일을 직접 실행해 주세요.', 'An existing installation was found. Run this installer interactively to confirm reinstalling.'), mbError, MB_OK);
       Result := False;
@@ -211,6 +214,14 @@ begin
     Result := Localize('기존 ATS 폴더에는 설치할 수 없습니다.', 'Cannot install in a protected application folder.');
     Exit;
   end;
+  if AppUpdateMode then
+  begin
+    if (OldLocation = '') or
+       (CompareText(RemoveBackslashUnlessRoot(ExpandConstant('{app}')), RemoveBackslashUnlessRoot(OldLocation)) <> 0) then
+      Result := 'Update installation path does not match the registered application.';
+    // Keep the installed program until replacement; never uninstall or remove user data.
+    Exit;
+  end;
   if (OldUninstaller = '') or ReinstallFinished then Exit;
   if MsgBox(Localize('기존 mikunoi_Stock_Calculator를 제거한 뒤 새 버전을 설치할까요?', 'Remove the existing version and install this version?') + #13#10 + #13#10 +
     Localize('먼저 실행 중인 mikunoi_Stock_Calculator를 닫아 주세요.', 'Close mikunoi_Stock_Calculator first.') + #13#10 +
@@ -244,3 +255,8 @@ end;
 
 
 
+
+function IsAppUpdate(): Boolean;
+begin
+  Result := AppUpdateMode;
+end;

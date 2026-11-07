@@ -5,7 +5,7 @@
 ## 다운로드
 [최신 버전 다운로드](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.0-x64.exe**를 받아 실행하세요.
+Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.1-x64.exe**를 받아 실행하세요.
 Windows 10/11 x64 · Rust/Python 별도 설치 불필요 · 설치파일은 코드 서명되지 않았습니다.
 
 ## 기능
@@ -30,7 +30,7 @@ US는 영어 표시 모드입니다. 비중 계산의 기준 통화는 **KRW**�
 
 ## 개발·라이선스
 Rust 실행기 + Python Tkinter UI입니다. [개발 안내](SOURCE_GUIDE.md) / [MIT](LICENSE) / [외부 구성요소](THIRD_PARTY.md)
-[1.8.0 검증 결과](docs/RELEASE_CHECK_1.8.0.md)
+[1.8.1 검증 결과](docs/RELEASE_CHECK_1.8.1.md)
 
 ---
 
@@ -41,7 +41,7 @@ Rust 실행기 + Python Tkinter UI입니다. [개발 안내](SOURCE_GUIDE.md) / 
 ## Download
 [Download the latest release](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.0-x64.exe** and run it.
+Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.1-x64.exe** and run it.
 Windows 10/11 x64. End users do not need to install Rust or Python. The installer is not code-signed.
 The Source code ZIP is for developers; the EXE is the installer.
 
@@ -68,4 +68,12 @@ Excel exports store share quantities as text to preserve all eight decimal place
 ## Development and license
 Rust launcher + Python/Tkinter UI. See [development guide](SOURCE_GUIDE.md).
 [MIT License](LICENSE), Copyright (c) 2026 mikunoi. Third-party components retain their own licenses.
-See [release checks](docs/RELEASE_CHECK_1.8.0.md) for validation and remaining limits.
+See [release checks](docs/RELEASE_CHECK_1.8.1.md) for validation and remaining limits.
+
+
+## 1.8.1 업데이트 / Update
+실행 시 한 번 GitHub 새 버전을 확인하고 프로그램 아이콘·버전·변경내용을 안내합니다. 이용자가 업데이트를 선택하면 파일 검증 후 설치합니다. 예수금 감액 표시와 현재 평가금액/목표금액 열도 개선했습니다.
+
+The app checks GitHub once at startup. When a newer release is available, a dialog shows the app icon, versions and release notes. Installation starts only after you choose Update and the download passes integrity checks. Cash withdrawal display and current/target valuation columns are also improved.
+
+기존 1.8.0에는 업데이터가 없으므로 최초 1회 직접 설치해야 합니다. / Original 1.8.0 users must install this version manually once to enable future in-app updates.

@@ -135,6 +135,50 @@ class ReleaseChecks(unittest.TestCase):
             self.assertFalse(any(re.search('[가-힣]',t) for t in drawn))
         finally:app.close()
 
+    def test_update_release_validation(self):
+        import app_update as u,io,hashlib
+        payload=b'installer bytes'
+        info={'tag_name':'v1.8.2','body':'## 한국어\n수정\n## English\nFix','assets':[{'name':'mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe','state':'uploaded','size':len(payload),'digest':'sha256:'+hashlib.sha256(payload).hexdigest(),'browser_download_url':'https://github.com/mikunoi/investment-calculator/releases/download/v1.8.2/mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe'}]}
+        def check():
+            with patch.object(u,'urlopen',return_value=io.BytesIO(json.dumps(info).encode())):return u.release()
+        self.assertIsNotNone(check())
+        info['draft']=True;self.assertIsNone(check());info['draft']=False
+        info['assets'][0]['browser_download_url']='https://example.com/setup.exe';self.assertIsNone(check())
+        self.assertGreater(u.version('v1.10.0'),u.version('1.9.9'))
+        self.assertIsNone(u.version('v1.9.0-beta'))
+
+    def test_update_download_integrity_cancel(self):
+        import app_update as u,io,hashlib,queue,threading
+        payload=b'complete installer'
+        class Response(io.BytesIO):
+            def geturl(self):return 'https://release-assets.githubusercontent.com/example'
+        info={'url':'https://github.com/mikunoi/investment-calculator/releases/download/v1.8.2/setup.exe','name':'setup.exe','size':len(payload),'digest':hashlib.sha256(payload).hexdigest()}
+        q=queue.Queue();cancel=threading.Event()
+        with patch.object(u,'urlopen',return_value=Response(payload)):u.download(info,cancel,q)
+        events=list(q.queue);path=next(v for k,v in events if k=='downloaded')
+        self.assertEqual(path.read_bytes(),payload)
+        info['digest']='0'*64
+        with patch.object(u,'urlopen',return_value=Response(payload)),self.assertRaises(ValueError):u.download(info,cancel,queue.Queue())
+        self.assertFalse(list((u.DATA/'update-cache').glob('*.part')))
+        cancel.set();q=queue.Queue()
+        with patch.object(u,'urlopen',return_value=Response(payload)):u.download(info,cancel,q)
+        self.assertTrue(q.empty())
+
+    def test_legend_original_and_targets(self):
+        app=App();app.withdraw()
+        try:
+            app.persist(sample());app.show('allocation');app.update_idletasks();v=find(app,AllocationView)
+            v.plans=[dict(key=('holding',0),name='국내',symbol='001234',kind='percent',value=D(20))]
+            v.extra.set('-10000');app.update_idletasks()
+            item=next(i for i,k in v.legend_keys.items() if k==('holding',0))
+            self.assertEqual(v.legend.set(item,'evaluation'),'12,000')
+            self.assertEqual(v.legend.set(item,'target'),'54,000')
+            self.assertEqual(v.legend_cell_colors[item],'#159C65')
+            v.plans[0]['value']=D(1);v.update_all();app.update_idletasks()
+            item=next(i for i,k in v.legend_keys.items() if k==('holding',0))
+            self.assertEqual(v.legend_cell_colors[item],'#E5484D')
+        finally:app.close()
+
     def test_average(self):
         quantity,cost,average,added=calculate('40','2500',[('2000','40')])
         self.assertEqual((quantity,cost,average,added),(D(80),D(180000),D(2250),D(80000)))

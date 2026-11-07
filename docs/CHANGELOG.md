@@ -11,3 +11,7 @@
 ## 1.7.0
 - Dark / Light / Matrix theme persistence
 - Initial MIT GitHub release
+
+
+## 1.8.1
+Startup-only update notification with app icon and release notes. Verified installer download and data-preserving in-place update mode. Interrupted downloads leave the installed application unchanged. Power loss during installation may require rerunning setup. 13 isolated regression tests passed, including download integrity and cancellation. Power-loss recovery is not verified.
