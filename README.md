@@ -5,7 +5,7 @@
 ## 다운로드
 [최신 버전 다운로드](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe**를 받아 실행하세요.
+Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.4-x64.exe**를 받아 실행하세요.
 Windows 10/11 x64 · Rust/Python 별도 설치 불필요 · 설치파일은 코드 서명되지 않았습니다.
 
 ## 기능
@@ -41,7 +41,7 @@ Rust 실행기 + Python Tkinter UI입니다. [개발 안내](SOURCE_GUIDE.md) / 
 ## Download
 [Download the latest release](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.2-x64.exe** and run it.
+Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.4-x64.exe** and run it.
 Windows 10/11 x64. End users do not need to install Rust or Python. The installer is not code-signed.
 The Source code ZIP is for developers; the EXE is the installer.
 
@@ -87,3 +87,16 @@ Choose **Remind me in 7 days** to pause automatic prompts across restarts. **Upd
 추가 디버깅: 다운로드 진행 영역의 팝업 배경 크기 보정, 재시도 진행률 초기화, 7일 보류 설정을 포함한 파일별 원자적 백업. 격리 회귀검사 16개 통과.
 
 Additional fixes: update card resizing during downloads, progress reset on retry, atomic per-file backups including reminder settings. 16 isolated regression tests passed. Other-PC and power-loss recovery remain untested.
+
+
+## 1.8.4 누적 수정 / Cumulative fixes
+- 이전 공개 업데이트로 덮어써졌던 로컬 수정사항을 정식 설치파일에 통합했습니다.
+- Windows Shell 기반 Rust 런처로 실행 경로 보완, 중복 실행 시 안내, 화면 작업영역에 맞는 창 크기·위치 보정.
+- 업데이트 팝업 드래그, 항상 위 표시, 본창 종료 시 함께 종료. 아이콘 녹색 업데이트 버튼.
+- 시작 화면과 종료 시 예약 콜백 정리. 자산·목표·언어·테마는 보존합니다.
+
+Includes the previously local-only fixes in the official installer: Windows Shell-based Rust launch, single-instance notice, monitor work-area sizing, draggable always-on-top update dialog, green update buttons, and pending UI callback cleanup. Existing holdings, saved targets, language and theme are preserved. The update dialog stays above other apps until dismissed.
+
+If an older version cannot open, install the latest EXE manually. No Rust/Python installation is required. See [validation](docs/RELEASE_CHECK_1.8.4.md).
+
+Validation: 18 isolated regression checks and three packaged launch/close cycles passed. The launcher processes Windows messages while waiting for the UI; duplicate launch shows a notice without creating another calculator.

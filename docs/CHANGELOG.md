@@ -1,3 +1,9 @@
+# 1.8.4 — 2026-11-08
+- Consolidate local startup, window placement, single-instance and update-popup fixes.
+- Rust uses ShellExecuteExW and waits for the UI process; no hidden console startup flags.
+- Cancel delayed startup/scroll/monitor callbacks on teardown.
+- Keep all fractional-share, FX, targets, bilingual UI/export and data-preservation features.
+
 # 1.8.3 — 2026-11-08
 - Repaint the rounded update card only when its size changes; coalesce resize events. Fix background sizing when download progress expands.
 - Reset progress before retry and cancel pending drawing callbacks when closing.

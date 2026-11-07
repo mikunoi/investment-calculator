@@ -48,12 +48,16 @@ class App(tk.Tk):
         if saved_mode not in ('default','toss','matrix'):saved_mode='default'
         theme.select(saved_mode);self.p=PALETTES[theme.CURRENT];self.configure(bg=self.p['page'])
         self.build_ui()
+        from screen_fit import ScreenFit
+        self.screen_fit=ScreenFit(self)
         self.updater=None
         if getattr(sys,'frozen',False):
             from app_update import StartupUpdate
             self.updater=StartupUpdate(self)
 
     def build_ui(self):
+        if getattr(self,"startup_job",None):
+            self.after_cancel(self.startup_job);self.startup_job=None
         self.modes={tr('다크'):'default',tr('라이트'):'toss',tr('메트릭스'):'matrix'}
         saved_mode=next(k for k,v in self.modes.items() if v==theme.CURRENT)
         self.apply_style()
@@ -78,10 +82,14 @@ class App(tk.Tk):
         from source_export import show_source_export
         for event in ('<Button-1>','<Return>','<space>'):
             self.creator.bind(event,lambda _:show_source_export(self))
-        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.3',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
+        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.4',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
         self.credit.pack(side='left')
-        self.show('average')
+        self.startup_job=self.after(150,self.show_initial_page)
         if getattr(self,'updater',None):self.updater.ensure_button()
+
+    def show_initial_page(self):
+        self.startup_job=None
+        if not self.closing and not self.current:self.show("average")
 
     def apply_style(self):
         p=self.p;style=ttk.Style(self);style.theme_use('clam')
@@ -175,7 +183,7 @@ class App(tk.Tk):
             if kind=='average':AverageCostView(body,lambda:deepcopy(self.data),theme.CURRENT).pack(fill='both',expand=True,padx=8)
             elif kind=='allocation':AllocationView(body,lambda:deepcopy(self.data),self.save_fx).pack(fill='both',expand=True,padx=8)
             else:self.assets(body)
-            frame.update_idletasks()
+            # Let the main event loop settle layout without blocking window mapping.
         except Exception:
             frame.destroy()
             raise
@@ -190,6 +198,9 @@ class App(tk.Tk):
     def close(self):
         if self.closing:return
         self.closing=True
+        if getattr(self,"startup_job",None):
+            self.after_cancel(self.startup_job);self.startup_job=None
+        if getattr(self,"screen_fit",None):self.screen_fit.stop()
         if getattr(self,'updater',None):self.updater.stop()
         # Widgets own their registered Tcl callbacks; destroy them through their owners.
         self.destroy()

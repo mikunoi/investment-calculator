@@ -20,7 +20,7 @@ from i18n import tr
 import i18n
 from scroll_support import SlimScrollbar
 
-VERSION = '1.8.3'
+VERSION = '1.8.4'
 REPO = 'mikunoi/investment-calculator'
 API = 'https://api.github.com/repos/' + REPO + '/releases/latest'
 DATA = Path(os.environ['LOCALAPPDATA']) / 'IndependentInvestmentCalculator'
@@ -153,6 +153,7 @@ class StartupUpdate:
     def __init__(self, app):
         self.app = app;self.messages = queue.Queue();self.cancel = threading.Event()
         self.job = None;self.dialog = None;self.downloading = False;self.info=None
+        self.raise_job=None;self.owner_bindings=[];self.drag_origin=None
         self.header_button=None;self.art_job=None;self.art_size=None
         self.job = app.after(1000, self.start)
 
@@ -240,7 +241,7 @@ class StartupUpdate:
         self.progress=ttk.Progressbar(self.download_area,length=500,maximum=100);self.progress.pack(pady=4)
         self.buttons=tk.Frame(panel,bg=p['card']);self.buttons.pack(pady=(2,12))
         RoundedAction(self.buttons,tr('나중에'),self.dismiss,p['field'],p['text'],180).pack(side='left',padx=8)
-        self.update_button=RoundedAction(self.buttons,tr('지금 업데이트'),self.begin_download,'#2379F8','white',216)
+        self.update_button=RoundedAction(self.buttons,tr('지금 업데이트'),self.begin_download,'#3CFB91','#063020',216)
         self.update_button.pack(side='left',padx=8)
         snooze=tk.Label(panel,text=tr('7일 동안 보이지 않기'),bg=p['card'],fg=p['muted'],cursor='hand2',takefocus=True,font=('맑은 고딕',10,'underline'))
         snooze.pack(pady=(0,5))
@@ -265,17 +266,63 @@ class StartupUpdate:
         paint()
         x=max(0,self.app.winfo_rootx()+(self.app.winfo_width()-win.winfo_reqwidth())//2)
         y=max(0,min(win.winfo_screenheight()-win.winfo_reqheight()-40,self.app.winfo_rooty()+(self.app.winfo_height()-win.winfo_reqheight())//2))
-        win.geometry(f'+{x}+{y}');win.deiconify();win.grab_set()
+        win.geometry(f'+{x}+{y}');win.deiconify()
+        self.attach_window_behavior(win,panel,shell)
+
+    def attach_window_behavior(self,win,panel,shell):
+        # Borderless Windows popups can lose owned-window ordering: keep visible until dismissed.
+        win.attributes("-topmost",True)
+        win.bind("<ButtonPress-1>",lambda event:self.activate_dialog(),add="+")
+        def raise_with_owner(event):
+            if getattr(self.app,'closing',False):return
+            if event.widget.winfo_toplevel() is not self.app:return
+            if self.raise_job is None:self.raise_job=self.app.after(200,self.raise_dialog)
+        for sequence in ('<FocusIn>','<ButtonPress-1>','<Map>'):
+            binding=self.app.bind(sequence,raise_with_owner,add='+')
+            self.owner_bindings.append((sequence,binding))
+        def start_drag(event):
+            self.drag_origin=(event.x_root,event.y_root,win.winfo_x(),win.winfo_y())
+        def drag(event):
+            if self.drag_origin:
+                x,y,wx,wy=self.drag_origin
+                win.geometry(f'{wx+event.x_root-x:+d}{wy+event.y_root-y:+d}')
+        def end_drag(event):self.drag_origin=None
+        # Keep text scrolling and buttons independent from window dragging.
+        surfaces=[panel,shell]+[child for child in panel.winfo_children()
+            if (isinstance(child,tk.Label) and child.cget('cursor')!='hand2') or isinstance(child,tk.Canvas)]
+        for widget in surfaces:
+            widget.bind('<ButtonPress-1>',start_drag,add='+')
+            widget.bind('<B1-Motion>',drag,add='+')
+            widget.bind('<ButtonRelease-1>',end_drag,add='+')
+        self.raise_dialog()
+
+    def raise_dialog(self):
+        self.raise_job=None
+        if not getattr(self.app,'closing',False) and self.dialog and self.dialog.winfo_exists():
+            self.dialog.attributes("-topmost",True)
+            self.dialog.lift()
+
+    def activate_dialog(self):
+        if not getattr(self.app,"closing",False) and self.dialog and self.dialog.winfo_exists():
+            self.dialog.attributes("-topmost",True)
+            self.dialog.lift()
+            self.dialog.focus_force()
 
     def ensure_button(self):
         if not self.info:return
         if self.header_button is not None and self.header_button.winfo_exists():return
         from average_cost import SoftButton
-        self.header_button=SoftButton(self.app.nav,tr('업데이트'),self.open_pending,self.app.p,width=92,height=36)
+        class UpdateButton(SoftButton):
+            def draw(button,event=None):
+                original=button.p
+                button.p=dict(original,field='#3CFB91',line='#65FCA8',text='#063020')
+                try:super().draw(event)
+                finally:button.p=original
+        self.header_button=UpdateButton(self.app.nav,tr('업데이트'),self.open_pending,self.app.p,width=92,height=36)
         self.header_button.pack(side='right',padx=8)
 
     def open_pending(self):
-        if self.dialog and self.dialog.winfo_exists():self.dialog.lift();return
+        if self.dialog and self.dialog.winfo_exists():self.activate_dialog();return
         if self.info:self.show(self.info)
 
     def dismiss(self,snooze=False):
@@ -325,6 +372,11 @@ class StartupUpdate:
 
     def stop(self):
         self.cancel.set()
+        if self.raise_job is not None:
+            self.app.after_cancel(self.raise_job);self.raise_job=None
+        for sequence,binding in self.owner_bindings:
+            self.app.unbind(sequence,binding)
+        self.owner_bindings.clear();self.drag_origin=None
         if self.art_job is not None and self.dialog and self.dialog.winfo_exists():
             self.dialog.after_cancel(self.art_job);self.art_job=None
         if self.job is not None:

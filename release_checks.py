@@ -234,6 +234,32 @@ class ReleaseChecks(unittest.TestCase):
             self.assertEqual(v.legend_cell_colors[item],'#E5484D')
         finally:app.close()
 
+    def test_pending_callbacks_cleanup(self):
+        app=App();app.withdraw()
+        app.show('assets')
+        app.language.set('US');app.change_language()
+        self.assertEqual(app.current,'assets')
+        app.show_initial_page();self.assertEqual(app.current,'assets')
+        app.close()
+        self.assertIsNone(app.screen_fit.job)
+        self.assertIsNone(app.screen_fit.initial_job)
+        self.assertFalse(app.screen_fit.map_jobs)
+
+    def test_popup_topmost_drag_and_owner_close(self):
+        import app_update as u
+        app=App();app.update()
+        updater=u.StartupUpdate(app);app.updater=updater
+        app.after_cancel(updater.job);updater.job=None
+        updater.show({'tag':'v9.0.0','notes':'Release notes'})
+        app.update()
+        self.assertTrue(updater.dialog.attributes('-topmost'))
+        self.assertIsNone(app.grab_current())
+        updater.activate_dialog();app.update()
+        self.assertEqual(app.focus_get().winfo_toplevel(),updater.dialog)
+        app.close()
+        self.assertTrue(updater.cancel.is_set())
+        self.assertFalse(updater.owner_bindings)
+
     def test_average(self):
         quantity,cost,average,added=calculate('40','2500',[('2000','40')])
         self.assertEqual((quantity,cost,average,added),(D(80),D(180000),D(2250),D(80000)))

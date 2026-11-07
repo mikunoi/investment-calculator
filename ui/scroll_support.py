@@ -114,7 +114,10 @@ def scroll_page(parent, bg, slim=True):
     item=canvas.create_window(0,0,window=body,anchor='nw')
     body.bind('<Configure>',lambda e:canvas.configure(scrollregion=canvas.bbox('all')))
     canvas.bind('<Configure>',lambda e:canvas.itemconfigure(item,width=e.width))
+    attach_job=None
     def attach():
+        nonlocal attach_job
+        attach_job=None
         if not canvas.winfo_exists():return
         def walk(w):
             if getattr(w,'_independent_scroll',False):return
@@ -122,5 +125,10 @@ def scroll_page(parent, bg, slim=True):
             if isinstance(w,(tk.Frame,tk.Label,tk.Canvas)):bind_drag(w,canvas)
             for child in w.winfo_children():walk(child)
         walk(canvas)
-    parent.after_idle(attach)
+    attach_job=parent.after_idle(attach)
+    def cleanup(event):
+        nonlocal attach_job
+        if event.widget is parent and attach_job is not None:
+            parent.after_cancel(attach_job);attach_job=None
+    parent.bind("<Destroy>",cleanup,add="+")
     return body

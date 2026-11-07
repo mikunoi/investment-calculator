@@ -57,10 +57,20 @@ class Card(tk.Canvas):
         super().__init__(parent, bg=palette['page'], highlightthickness=0, bd=0, height=100)
         self.body = tk.Frame(self, bg=self.fill)
         self.slot = self.create_window(22, 16, anchor='nw', window=self.body)
-        self.bind('<Configure>', self.layout)
-        self.body.bind('<Configure>', self.layout)
+        self.layout_job=None
+        self.bind('<Configure>', self.schedule_layout)
+        self.body.bind('<Configure>', self.schedule_layout)
+        self.bind('<Destroy>', self.cancel_layout, add='+')
+
+    def schedule_layout(self,event=None):
+        if self.layout_job is None:self.layout_job=self.after(20,self.layout)
+
+    def cancel_layout(self,event):
+        if event.widget is self and self.layout_job is not None:
+            self.after_cancel(self.layout_job);self.layout_job=None
 
     def layout(self, event=None):
+        self.layout_job=None
         width = max(80, self.winfo_width())
         if width!=getattr(self,'_layout_width',None):
             self._layout_width=width

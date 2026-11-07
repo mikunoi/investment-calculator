@@ -20,15 +20,13 @@ try {
     Remove-Item -LiteralPath $runtimeStage -Recurse -Force
     New-Item -ItemType Directory -Path $runtimeStage | Out-Null
     Copy-Item dist/CalculatorUI/* package/runtime -Recurse -Force
-    if (Test-Path -LiteralPath 'package/InvestmentCalculator.exe') { Remove-Item -LiteralPath 'package/InvestmentCalculator.exe' -Force }
     Copy-Item launcher/target/release/investment-calculator.exe package/mikunoi_Stock_Calculator.exe -Force
     Copy-Item assets/matrix-icon.ico package/InvestmentCalculator.ico -Force
     Copy-Item README.md package/README.md -Force
-    Copy-Item LICENSE,THIRD_PARTY.md package -Force
-    Copy-Item licenses/* package/licenses -Recurse -Force
     New-Item -ItemType Directory -Force package/docs | Out-Null
     Copy-Item docs/*.md package/docs -Force
-
+    & $Python -c "import importlib.metadata as m,shutil; d=m.distribution('openpyxl'); p=next(d.locate_file(f) for f in d.files if f.name.startswith('LICEN')); shutil.copy2(p,'package/licenses/Openpyxl-LICENSE.txt')"
+    if ($LASTEXITCODE -ne 0) { throw 'License copy failed' }
     & $Compiler /Q setup.iss
     if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
 } finally { Pop-Location }
