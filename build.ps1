@@ -1,0 +1,30 @@
+param([string]$Python = "$PSScriptRoot/.venv/Scripts/python.exe", [string]$Compiler = "$PSScriptRoot/tools/inno/ISCC.exe")
+$ErrorActionPreference='Stop'
+Push-Location $PSScriptRoot
+try {
+    & $Python build_source.py
+    if ($LASTEXITCODE -ne 0) { throw 'Source bundle failed' }
+    & cargo build --release --manifest-path launcher/Cargo.toml
+    if ($LASTEXITCODE -ne 0) { throw 'Rust build failed' }
+    & $Python -m PyInstaller --noconfirm --windowed --onedir --name CalculatorUI --distpath dist --workpath build --specpath . --paths ui --icon assets/matrix-icon.ico --add-data "assets/matrix-icon.ico;assets" --add-data "generated/InvestmentCalculator-source.txt;source" ui/main.py
+    if ($LASTEXITCODE -ne 0) { throw 'UI build failed' }
+    New-Item -ItemType Directory -Force package/runtime,package/licenses | Out-Null
+    # Rebuild only our staging runtime; removed dependencies must not linger in releases.
+    $runtimeStage=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'package/runtime'))
+    $packageRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'package'))
+    if ($runtimeStage -ne (Join-Path $packageRoot 'runtime')) { throw 'Unexpected runtime staging path' }
+    Remove-Item -LiteralPath $runtimeStage -Recurse -Force
+    New-Item -ItemType Directory -Path $runtimeStage | Out-Null
+    Copy-Item dist/CalculatorUI/* package/runtime -Recurse -Force
+    Copy-Item launcher/target/release/investment-calculator.exe package/InvestmentCalculator.exe -Force
+    Copy-Item assets/matrix-icon.ico package/InvestmentCalculator.ico -Force
+    Copy-Item README.md package/README.md -Force
+    Copy-Item LICENSE,THIRD_PARTY.md package -Force
+    Copy-Item licenses/* package/licenses -Recurse -Force
+    New-Item -ItemType Directory -Force package/docs | Out-Null
+    Copy-Item docs/*.md package/docs -Force
+
+    & $Compiler /Q setup.iss
+    if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
+} finally { Pop-Location }
+

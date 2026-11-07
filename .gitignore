@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+package/
+generated/
+releases/
+launcher/target/
+tools/
+*.spec
+.env*

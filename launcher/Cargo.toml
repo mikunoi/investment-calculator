@@ -1,0 +1,18 @@
+[package]
+name = "investment-calculator"
+version = "1.6.3"
+edition = "2021"
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+panic = "abort"
+
+
+
+
+
+
+
+
+
