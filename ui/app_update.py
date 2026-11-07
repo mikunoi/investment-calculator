@@ -20,7 +20,7 @@ from i18n import tr
 import i18n
 from scroll_support import SlimScrollbar
 
-VERSION = '1.8.8'
+VERSION = '1.8.9'
 REPO = 'mikunoi/investment-calculator'
 API = 'https://api.github.com/repos/' + REPO + '/releases/latest'
 DATA = Path(os.environ['LOCALAPPDATA']) / 'IndependentInvestmentCalculator'

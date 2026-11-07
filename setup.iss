@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C23B1E36-B85D-4A97-89EC-24FA09373CD8}
 AppName=mikunoi_Stock_Calculator
-AppVersion=1.8.8
+AppVersion=1.8.9
 AppPublisher=mikunoi
 DefaultDirName={localappdata}\Programs\IndependentInvestmentCalculator
 DefaultGroupName=mikunoi_Stock_Calculator
@@ -10,7 +10,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir=releases
-OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.8-x64
+OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.9-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

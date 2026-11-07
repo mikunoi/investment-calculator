@@ -1,3 +1,13 @@
+# v1.8.9 — 2026-11-08
+
+- 설정에 GitHub 개발 페이지 버튼을 추가했습니다. 기본 브라우저에서 투자계산기 저장소를 엽니다.
+- 한글과 US 언어를 지원하며, 버튼을 열 수 없는 경우 안내합니다.
+
+## English
+
+- Added a GitHub project page button to Settings. It opens the calculator repository in the default browser.
+- Supports Korean and English and reports if a browser cannot be opened.
+
 # v1.8.8 — 2026-11-08
 
 - 업데이트 후 계산기 프로세스를 이름과 설치 경로로 빠르게 확인합니다.

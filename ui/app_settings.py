@@ -2,6 +2,7 @@
 import os
 import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
@@ -62,6 +63,13 @@ def settings_page(app, body):
         try:os.startfile(str(install_dir()))
         except OSError as error:messagebox.showerror(tr('설정'),str(error),parent=app)
     SoftButton(card,tr('설치 폴더 열기'),open_folder,p,width=210,height=44).pack(anchor='w',padx=24,pady=(0,18))
+    def open_github():
+        try:
+            if not webbrowser.open('https://github.com/mikunoi/investment-calculator', new=2):
+                raise OSError(tr('브라우저를 열지 못했습니다.'))
+        except Exception as error:
+            messagebox.showerror(tr('GitHub 개발 페이지'),str(error),parent=app)
+    SoftButton(card,tr('GitHub 개발 페이지'),open_github,p,width=270,height=44).pack(anchor='w',padx=24,pady=(0,18))
     def open_maintenance():
         try:
             import shutil, tempfile

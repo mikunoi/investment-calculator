@@ -303,5 +303,7 @@
   "바탕화면 바로가기 만들기": "Create desktop shortcut",
   "설치제거": "Uninstall",
   "설치파일을 찾을 수 없습니다. 내려받은 설치파일을 실행해 주세요.": "Installer not found. Please run the downloaded installer.",
-  "계산기를 닫고 설치파일을 엽니다. 설치제거 항목을 선택해 주세요.": "Closes the calculator and opens Setup. Select Uninstall there."
+  "계산기를 닫고 설치파일을 엽니다. 설치제거 항목을 선택해 주세요.": "Closes the calculator and opens Setup. Select Uninstall there.",
+  "GitHub 개발 페이지": "GitHub project page",
+  "브라우저를 열지 못했습니다.": "Could not open the browser."
 }
