@@ -20,7 +20,7 @@ from i18n import tr
 import i18n
 from scroll_support import SlimScrollbar
 
-VERSION = '1.8.5'
+VERSION = '1.8.6'
 REPO = 'mikunoi/investment-calculator'
 API = 'https://api.github.com/repos/' + REPO + '/releases/latest'
 DATA = Path(os.environ['LOCALAPPDATA']) / 'IndependentInvestmentCalculator'
@@ -280,7 +280,13 @@ class StartupUpdate:
             self.art_size=w,h
             backdrop=Image.new('RGBA',(w*3,h*3))
             ImageDraw.Draw(backdrop).rounded_rectangle((2,2,w*3-3,h*3-3),radius=22*3,fill=p['card'],outline='#526D84',width=4)
-            self.card_art=ImageTk.PhotoImage(backdrop.resize((w,h),Image.Resampling.LANCZOS),master=win)
+            # Color-key transparency must be binary: partial alpha blends with magenta.
+            edge=backdrop.resize((w,h),Image.Resampling.LANCZOS)
+            opaque=Image.new('RGBA',(w,h),p['card'])
+            opaque.alpha_composite(edge)
+            keyed=Image.new('RGB',(w,h),'#FF00FE')
+            keyed.paste(opaque.convert('RGB'),mask=edge.getchannel('A').point(lambda a:255 if a>=128 else 0))
+            self.card_art=ImageTk.PhotoImage(keyed,master=win)
             shell.itemconfigure(self.art_item,image=self.card_art)
         def resize(event):
             if self.art_job is None:self.art_job=win.after_idle(paint)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 files = sorted((ROOT / 'ui').glob('*.py')) + [ROOT / path for path in (
-    'build_source.py', 'build.ps1', 'setup.iss', 'launcher/Cargo.toml',
+    'build_source.py', 'build.ps1', 'finish-update.ps1', 'setup.iss', 'launcher/Cargo.toml',
     'launcher/Cargo.lock', 'launcher/build.rs', 'launcher/src/main.rs',
     'SOURCE_GUIDE.md', 'requirements.txt', 'ui/translations.json', 'LICENSE')]
 parts = ['투자계산기 소스 묶음 / mikunoi\n'

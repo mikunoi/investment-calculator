@@ -22,6 +22,7 @@ try {
     Copy-Item dist/CalculatorUI/* package/runtime -Recurse -Force
     Copy-Item launcher/target/release/investment-calculator.exe package/mikunoi_Stock_Calculator.exe -Force
     Copy-Item assets/matrix-icon.ico package/InvestmentCalculator.ico -Force
+    Copy-Item finish-update.ps1 package/finish-update.ps1 -Force
     Copy-Item README.md package/README.md -Force
     New-Item -ItemType Directory -Force package/docs | Out-Null
     Copy-Item docs/*.md package/docs -Force

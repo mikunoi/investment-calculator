@@ -13,11 +13,29 @@ fn main() {
     let name: Vec<u16> = "Local\\mikunoi.StockCalculator.SingleInstance".encode_utf16().chain(Some(0)).collect();
     let mutex = unsafe { CreateMutexW(std::ptr::null(), 0, name.as_ptr()) };
     let duplicate = unsafe { GetLastError() } == 183;
-    if mutex == 0 || duplicate {
-        let text: Vec<u16> = "투자계산기가 이미 실행 중이거나 실행 잠금을 확보할 수 없습니다. 작업표시줄에서 확인해 주세요.\nThe calculator is already running or its startup lock is unavailable. Please check the taskbar.".encode_utf16().chain(Some(0)).collect();
+    if mutex == 0 { return; }
+    if duplicate {
+        let gate_name: Vec<u16> = "Local\\mikunoi.StockCalculator.RestartApproval".encode_utf16().chain(Some(0)).collect();
+        let gate = unsafe { CreateMutexW(std::ptr::null(), 0, gate_name.as_ptr()) };
+        let busy = unsafe { GetLastError() } == 183;
+        if gate == 0 || busy {
+            unsafe { if gate != 0 { CloseHandle(gate); } CloseHandle(mutex); }
+            return;
+        }
+        let text: Vec<u16> = "이미 실행 중인 계산기를 모두 종료하고 새 계산기를 여시겠습니까?\n저장하지 않은 입력과 목표 설정은 손실될 수 있습니다.\n\nClose existing calculator windows and open a new calculator?\nUnsaved input and target settings may be lost."
+            .encode_utf16().chain(Some(0)).collect();
         let title: Vec<u16> = "mikunoi_Stock_Calculator".encode_utf16().chain(Some(0)).collect();
-        unsafe { MessageBoxW(0, text.as_ptr(), title.as_ptr(), 0x40); if mutex != 0 { CloseHandle(mutex); } }
-        return;
+        let approved = unsafe { MessageBoxW(0, text.as_ptr(), title.as_ptr(), 0x124) } == 6;
+        let stopped = approved && stop_previous().is_ok();
+        unsafe { CloseHandle(gate); }
+        if !stopped {
+            if approved {
+                let error: Vec<u16> = "기존 계산기를 종료하지 못했습니다. 새 실행을 취소했습니다.\nCould not close the existing calculator. Restart cancelled.".encode_utf16().chain(Some(0)).collect();
+                unsafe { MessageBoxW(0,error.as_ptr(),title.as_ptr(),0x10); }
+            }
+            unsafe { CloseHandle(mutex); }
+            return;
+        }
     }
     let result = (|| -> std::io::Result<()> {
         let base = env::current_exe()?.parent().unwrap().to_path_buf();
@@ -82,4 +100,39 @@ fn wait_ui(handle:isize)->u32 {
             unsafe{TranslateMessage(&message);DispatchMessageW(&message);}
         }
     }
+}
+
+// Short-lived cleanup, restricted to this installation and Windows session.
+fn stop_previous() -> std::io::Result<()> {
+    use std::os::windows::process::CommandExt;
+    let exe = env::current_exe()?;
+    let base = exe.parent().ok_or_else(|| std::io::Error::other("Missing installation directory"))?;
+    let script = r#"
+$ErrorActionPreference='Stop'
+$me=[int]$env:CALCULATOR_RESTART_PID
+$root=$env:CALCULATOR_RESTART_DIR
+$launcher=Join-Path $root 'mikunoi_Stock_Calculator.exe'
+$ui=Join-Path $root 'runtime\CalculatorUI.exe'
+$session=(Get-Process -Id $me).SessionId
+function Matches { @(Get-Process | Where-Object { $_.Id -ne $me -and $_.SessionId -eq $session -and ($_.Path -eq $launcher -or $_.Path -eq $ui) }) }
+# Stop waiting launchers first so forced UI exit cannot create an error dialog.
+foreach($p in (Matches | Sort-Object @{Expression={if($_.Path -eq $launcher){0}else{1}}})) {
+ $fresh=Get-Process -Id $p.Id -ErrorAction SilentlyContinue
+ if($fresh -and $fresh.StartTime -eq $p.StartTime -and $fresh.SessionId -eq $session -and ($fresh.Path -eq $launcher -or $fresh.Path -eq $ui)) {
+  if($fresh.Path -eq $ui){ [void]$fresh.CloseMainWindow(); [void]$fresh.WaitForExit(2000) }
+  if(-not $fresh.HasExited){ $fresh.Kill(); if(-not $fresh.WaitForExit(5000)){throw 'Shutdown timeout'} }
+ }
+}
+if((Matches).Count -gt 0){exit 1}
+exit 0
+"#;
+    let powershell = std::path::PathBuf::from(env::var_os("SystemRoot").unwrap_or_else(|| "C:\\Windows".into()))
+        .join("System32/WindowsPowerShell/v1.0/powershell.exe");
+    let status = std::process::Command::new(powershell)
+        .args(["-NoProfile", "-NonInteractive", "-Command", script])
+        .env("CALCULATOR_RESTART_PID", std::process::id().to_string())
+        .env("CALCULATOR_RESTART_DIR", base)
+        .creation_flags(0x08000000).status()?;
+    if !status.success() { return Err(std::io::Error::other("Previous calculator did not exit")); }
+    Ok(())
 }

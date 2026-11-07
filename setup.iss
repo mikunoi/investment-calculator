@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C23B1E36-B85D-4A97-89EC-24FA09373CD8}
 AppName=mikunoi_Stock_Calculator
-AppVersion=1.8.5
+AppVersion=1.8.6
 AppPublisher=mikunoi
 DefaultDirName={localappdata}\Programs\IndependentInvestmentCalculator
 DefaultGroupName=mikunoi_Stock_Calculator
@@ -10,7 +10,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir=releases
-OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.5-x64
+OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.6-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -32,6 +32,7 @@ korean.UninstallApp=mikunoi_Stock_Calculator 제거
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopShortcut}"; Flags: unchecked
 [Files]
+Source: "finish-update.ps1"; Flags: dontcopy
 Source: "package\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 [Icons]
 Name: "{group}\mikunoi_Stock_Calculator"; Filename: "{app}\mikunoi_Stock_Calculator.exe"; IconFilename: "{app}\InvestmentCalculator.ico"; AppUserModelID: "mikunoi.InvestmentCalculator"
@@ -39,7 +40,7 @@ Name: "{group}\{cm:UninstallApp}"; Filename: "{uninstallexe}"; IconFilename: "{a
 Name: "{userdesktop}\mikunoi_Stock_Calculator"; Filename: "{app}\mikunoi_Stock_Calculator.exe"; Tasks: desktopicon; IconFilename: "{app}\InvestmentCalculator.ico"; AppUserModelID: "mikunoi.InvestmentCalculator"
 [Run]
 Filename: "{app}\mikunoi_Stock_Calculator.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\mikunoi_Stock_Calculator.exe"; Flags: nowait; Check: IsAppUpdate
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "{code:RestartArguments}"; Flags: nowait runhidden; Check: IsAppUpdate
 [UninstallDelete]
 ; Only empty application directories: never delete unknown/user files recursively.
 Type: dirifempty; Name: "{app}\runtime\_internal\PIL"
@@ -57,6 +58,14 @@ var
   DeleteDataBox: TNewCheckBox;
   RemovalFinished: Boolean;
   AppUpdateMode: Boolean;
+
+function GetCurrentProcessId(): LongWord;
+  external 'GetCurrentProcessId@kernel32.dll stdcall';
+
+function RestartArguments(Param: String): String;
+begin
+  Result := '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\finish-update.ps1') + '" -InstallDir "' + ExpandConstant('{app}') + '" -InstallerPid ' + IntToStr(GetCurrentProcessId());
+end;
 
 function Localize(Korean, English: String): String;
 begin
@@ -219,7 +228,17 @@ begin
     if (OldLocation = '') or
        (CompareText(RemoveBackslashUnlessRoot(ExpandConstant('{app}')), RemoveBackslashUnlessRoot(OldLocation)) <> 0) then
       Result := 'Update installation path does not match the registered application.';
-    // Keep the installed program until replacement; never uninstall or remove user data.
+    if Result <> '' then Exit;
+    ExtractTemporaryFile('finish-update.ps1');
+    if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+      '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + ExpandConstant('{tmp}\finish-update.ps1') + '" -InstallDir "' + ExpandConstant('{app}') + '" -StopOnly',
+      '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
+    begin
+      Result := 'Could not stop the existing calculator safely.';
+      Exit;
+    end;
+    if ExitCode <> 0 then Result := 'Calculator shutdown failed. Setup stopped before replacing files.';
+    // Keep user data and wait for all exact-path calculator processes before replacing files.
     Exit;
   end;
   if (OldUninstaller = '') or ReinstallFinished then Exit;
