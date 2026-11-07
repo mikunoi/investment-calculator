@@ -1,7 +1,7 @@
 [Setup]
 AppId={{C23B1E36-B85D-4A97-89EC-24FA09373CD8}
 AppName=mikunoi_Stock_Calculator
-AppVersion=1.8.6
+AppVersion=1.8.7
 AppPublisher=mikunoi
 DefaultDirName={localappdata}\Programs\IndependentInvestmentCalculator
 DefaultGroupName=mikunoi_Stock_Calculator
@@ -10,7 +10,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir=releases
-OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.6-x64
+OutputBaseFilename=mikunoi_Stock_Calculator-Setup-1.8.7-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -42,6 +42,7 @@ Name: "{userdesktop}\mikunoi_Stock_Calculator"; Filename: "{app}\mikunoi_Stock_C
 Filename: "{app}\mikunoi_Stock_Calculator.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "{code:RestartArguments}"; Flags: nowait runhidden; Check: IsAppUpdate
 [UninstallDelete]
+Type: files; Name: "{app}\maintenance-setup.exe"
 ; Only empty application directories: never delete unknown/user files recursively.
 Type: dirifempty; Name: "{app}\runtime\_internal\PIL"
 Type: dirifempty; Name: "{app}\runtime\_internal"
@@ -278,4 +279,11 @@ end;
 function IsAppUpdate(): Boolean;
 begin
   Result := AppUpdateMode;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    if not FileCopy(ExpandConstant('{srcexe}'), ExpandConstant('{app}\maintenance-setup.exe'), False) then
+      Log('Could not retain maintenance installer.');
 end;

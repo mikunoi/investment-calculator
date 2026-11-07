@@ -69,7 +69,7 @@ class App(tk.Tk):
         self.apply_style()
         self.nav=tk.Frame(self,bg=self.p['page']);self.nav.pack(fill='x',padx=18,pady=14)
         tk.Label(self.nav,text='mikunoi_Stock_Calculator',font=('맑은 고딕',17,'bold'),bg=self.p['page'],fg=self.p['text']).pack(side='left',padx=(0,20))
-        for title,kind in [(tr('평단관리'),'average'),(tr('비중계산'),'allocation'),(tr('내 자산'),'assets')]:
+        for title,kind in [(tr('평단관리'),'average'),(tr('비중계산'),'allocation'),(tr('내 자산'),'assets'),(tr('설정'),'settings')]:
             SoftButton(self.nav,title,lambda k=kind:self.show(k),self.p,width=125,height=40).pack(side='left',padx=4)
         self.mode=tk.StringVar(value=saved_mode)
         choice=ttk.Combobox(self.nav,textvariable=self.mode,values=list(self.modes),state='readonly',width=8)
@@ -88,7 +88,7 @@ class App(tk.Tk):
         from source_export import show_source_export
         for event in ('<Button-1>','<Return>','<space>'):
             self.creator.bind(event,lambda _:show_source_export(self))
-        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.6',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
+        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.7',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
         self.credit.pack(side='left')
         self.startup_job=self.after(150,self.show_initial_page)
         if getattr(self,'updater',None):self.updater.ensure_button()
@@ -188,6 +188,9 @@ class App(tk.Tk):
             body=scroll_page(frame,self.p['page'])
             if kind=='average':AverageCostView(body,lambda:deepcopy(self.data),theme.CURRENT).pack(fill='both',expand=True,padx=8)
             elif kind=='allocation':AllocationView(body,lambda:deepcopy(self.data),self.save_fx).pack(fill='both',expand=True,padx=8)
+            elif kind=='settings':
+                from app_settings import settings_page
+                settings_page(self,body)
             else:self.assets(body)
             # Let the main event loop settle layout without blocking window mapping.
         except Exception:

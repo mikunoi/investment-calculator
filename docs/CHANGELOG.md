@@ -1,3 +1,15 @@
+# v1.8.7 — 2026-11-08
+
+- 설정 탭에서 바탕화면 바로가기를 만들고 설치 폴더를 열 수 있습니다.
+- 설치제거 버튼은 계산기를 닫고 설치파일의 설치·제거 선택 화면을 엽니다. 설정 버튼의 높이를 통일했습니다.
+- 설정 기능과 최신 코드가 내장 소스 저장 자료에 포함됩니다.
+
+## English
+
+- The Settings tab can create a desktop shortcut and open the installation folder.
+- The Uninstall button closes the calculator and opens the install/remove selection screen. Settings buttons share the same height.
+- Source export includes the current settings features and code.
+
 # 1.8.6 — 2026-11-08
 - 업데이트 설치기가 종료된 뒤 이전 계산기를 정리하고 재시작합니다. 창이 나타나지 않으면 한 번 재시도하며 실패한 프로세스를 정리합니다.
 - 중복 실행 시 미저장 정보 손실 안내와 승인을 받고 기존 계산기를 종료합니다. 취소하면 기존 창을 유지합니다.
@@ -50,8 +62,3 @@
 ## 1.8.1
 Startup-only update notification with app icon and release notes. Verified installer download and data-preserving in-place update mode. Interrupted downloads leave the installed application unchanged. Power loss during installation may require rerunning setup. 13 isolated regression tests passed, including download integrity and cancellation. Power-loss recovery is not verified.
 
-## 2026-11-08 Local 1.8.5 update restart fix (not published)
-- Update setup stops only calculator processes whose full executable paths match the validated installation, before replacing files.
-- After setup exits, a separate short-lived helper closes remaining calculator processes, releases the single-instance owner, and starts the calculator once.
-- The helper is not a resident/background service. Saved assets, goals and preferences are not deleted.
-- Local display version remains 1.8.5. GitHub v1.8.5 has not been replaced. Build and installed restart verification pending.
