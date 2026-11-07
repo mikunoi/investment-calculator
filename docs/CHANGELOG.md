@@ -1,3 +1,10 @@
+# 1.8.5 — 2026-11-08
+- Build the root window before first display to reduce startup mapping races.
+- Reset the frozen-runtime environment in the Rust launcher; sanitize DLL search paths and Python/Tcl variables when starting the external updater.
+- Fit each popup to its own monitor and clamp tiny/negative-origin work areas safely.
+- Reduce monitor polling while minimized; unchanged work areas do not trigger geometry changes.
+- Preserve all v1.8.4 features. This release does not alter trading services or personal portfolios.
+
 # 1.8.4 — 2026-11-08
 - Consolidate local startup, window placement, single-instance and update-popup fixes.
 - Rust uses ShellExecuteExW and waits for the UI process; no hidden console startup flags.

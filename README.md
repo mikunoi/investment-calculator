@@ -5,7 +5,7 @@
 ## 다운로드
 [최신 버전 다운로드](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.4-x64.exe**를 받아 실행하세요.
+Assets에서 **mikunoi_Stock_Calculator-Setup-1.8.5-x64.exe**를 받아 실행하세요.
 Windows 10/11 x64 · Rust/Python 별도 설치 불필요 · 설치파일은 코드 서명되지 않았습니다.
 
 ## 기능
@@ -41,7 +41,7 @@ Rust 실행기 + Python Tkinter UI입니다. [개발 안내](SOURCE_GUIDE.md) / 
 ## Download
 [Download the latest release](https://github.com/mikunoi/investment-calculator/releases/latest)
 
-Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.4-x64.exe** and run it.
+Under **Assets**, download **mikunoi_Stock_Calculator-Setup-1.8.5-x64.exe** and run it.
 Windows 10/11 x64. End users do not need to install Rust or Python. The installer is not code-signed.
 The Source code ZIP is for developers; the EXE is the installer.
 
@@ -100,3 +100,7 @@ Includes the previously local-only fixes in the official installer: Windows Shel
 If an older version cannot open, install the latest EXE manually. No Rust/Python installation is required. See [validation](docs/RELEASE_CHECK_1.8.4.md).
 
 Validation: 18 isolated regression checks and three packaged launch/close cycles passed. The launcher processes Windows messages while waiting for the UI; duplicate launch shows a notice without creating another calculator.
+
+## v1.8.5 안정화 / Stabilization
+창 초기 표시 순서와 업데이트 실행환경 분리를 개선하고, 최소화 중 화면 감시 빈도를 줄였습니다. 21개 회귀검사를 통과했습니다.
+Improved initial window display and isolated updater runtime environments. Reduced monitor polling while minimized. 21 regression checks passed; see docs/RELEASE_CHECK_1.8.5.md for limits.

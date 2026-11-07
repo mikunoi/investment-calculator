@@ -20,11 +20,33 @@ from i18n import tr
 import i18n
 from scroll_support import SlimScrollbar
 
-VERSION = '1.8.4'
+VERSION = '1.8.5'
 REPO = 'mikunoi/investment-calculator'
 API = 'https://api.github.com/repos/' + REPO + '/releases/latest'
 DATA = Path(os.environ['LOCALAPPDATA']) / 'IndependentInvestmentCalculator'
 MAX_FILE = 150 * 1024 * 1024
+
+
+def installer_environment():
+    env=os.environ.copy()
+    env['PYINSTALLER_RESET_ENVIRONMENT']='1'
+    for key in ('TCL_LIBRARY','TK_LIBRARY','PYTHONHOME','PYTHONPATH'):
+        env.pop(key,None)
+    return env
+
+
+def spawn_installer(command,cwd):
+    # External setup must use the system DLL search path, not our bundled runtime.
+    kernel=None
+    if os.name=='nt' and getattr(sys,'frozen',False):
+        import ctypes
+        kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+        kernel.SetDllDirectoryW.argtypes=[ctypes.c_wchar_p]
+        if not kernel.SetDllDirectoryW(None):raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        return subprocess.Popen(command,cwd=cwd,env=installer_environment())
+    finally:
+        if kernel is not None:kernel.SetDllDirectoryW(getattr(sys,'_MEIPASS',None))
 
 
 def file_digest(path):
@@ -363,7 +385,7 @@ class StartupUpdate:
             if not getattr(sys,'frozen',False):raise RuntimeError('Updates require the installed application')
             install=Path(sys.executable).resolve().parent.parent
             if not (install/'mikunoi_Stock_Calculator.exe').is_file():raise RuntimeError('Installation path is invalid')
-            subprocess.Popen([str(installer),'/APPUPDATE=1','/SILENT','/NORESTART','/DIR='+str(install),'/LOG='+str(DATA/'update-install.log')],cwd=str(installer.parent))
+            spawn_installer([str(installer),'/APPUPDATE=1','/SILENT','/NORESTART','/DIR='+str(install),'/LOG='+str(DATA/'update-install.log')],cwd=str(installer.parent))
         except Exception:
             self.downloading=False;self.update_button.config(state='normal')
             self.status.config(text=tr('업데이트를 시작하지 못했습니다. 기존 프로그램은 유지됩니다.'))

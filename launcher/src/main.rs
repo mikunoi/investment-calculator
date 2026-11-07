@@ -7,6 +7,7 @@ extern "system" {
     fn CreateMutexW(attrs: *const std::ffi::c_void, owner: i32, name: *const u16) -> isize;
     fn GetLastError() -> u32;
     fn CloseHandle(handle: isize) -> i32;
+    fn SetDllDirectoryW(path: *const u16) -> i32;
 }
 fn main() {
     let name: Vec<u16> = "Local\\mikunoi.StockCalculator.SingleInstance".encode_utf16().chain(Some(0)).collect();
@@ -46,6 +47,9 @@ extern "system" {
 }
 fn run_ui(base:&std::path::Path)->std::io::Result<()> {
     use std::os::windows::ffi::OsStrExt;
+    // The new UI must not reuse a previous frozen app runtime after updating.
+    env::set_var("PYINSTALLER_RESET_ENVIRONMENT", "1");
+    unsafe { SetDllDirectoryW(std::ptr::null()); }
     let file:Vec<u16>=base.join("runtime").join("CalculatorUI.exe").as_os_str().encode_wide().chain(Some(0)).collect();
     let directory:Vec<u16>=base.as_os_str().encode_wide().chain(Some(0)).collect();
     let mut info:ShellInfo=unsafe{std::mem::zeroed()};

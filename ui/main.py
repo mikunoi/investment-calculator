@@ -27,6 +27,7 @@ from allocation_media import format_money
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.withdraw()
         self.title('mikunoi_Stock_Calculator');self.geometry('1360x860');self.minsize(880,640)
         icon=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parent.parent))/'assets'/'matrix-icon.ico'
         self.iconbitmap(default=str(icon))
@@ -50,10 +51,15 @@ class App(tk.Tk):
         self.build_ui()
         from screen_fit import ScreenFit
         self.screen_fit=ScreenFit(self)
+        self.reveal_job=self.after(0,self.reveal_window)
         self.updater=None
         if getattr(sys,'frozen',False):
             from app_update import StartupUpdate
             self.updater=StartupUpdate(self)
+
+    def reveal_window(self):
+        self.reveal_job=None
+        if not self.closing:self.deiconify()
 
     def build_ui(self):
         if getattr(self,"startup_job",None):
@@ -82,7 +88,7 @@ class App(tk.Tk):
         from source_export import show_source_export
         for event in ('<Button-1>','<Return>','<space>'):
             self.creator.bind(event,lambda _:show_source_export(self))
-        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.4',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
+        self.credit=tk.Label(self.footer_line,text=' · 2026 · v1.8.5',font=('맑은 고딕',9),bg=self.p['page'],fg=self.p['muted'])
         self.credit.pack(side='left')
         self.startup_job=self.after(150,self.show_initial_page)
         if getattr(self,'updater',None):self.updater.ensure_button()
@@ -198,6 +204,8 @@ class App(tk.Tk):
     def close(self):
         if self.closing:return
         self.closing=True
+        if getattr(self,"reveal_job",None):
+            self.after_cancel(self.reveal_job);self.reveal_job=None
         if getattr(self,"startup_job",None):
             self.after_cancel(self.startup_job);self.startup_job=None
         if getattr(self,"screen_fit",None):self.screen_fit.stop()

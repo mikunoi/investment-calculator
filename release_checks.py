@@ -260,6 +260,35 @@ class ReleaseChecks(unittest.TestCase):
         self.assertTrue(updater.cancel.is_set())
         self.assertFalse(updater.owner_bindings)
 
+    def test_monitor_bounds(self):
+        from screen_fit import fit_bounds
+        for area in [(0,0,800,600),(-1920,-100,-640,900),(0,0,16,16)]:
+            for initial in (False,True):
+                x,y,w,h=fit_bounds((3000,2000,1362,892),area,initial)
+                self.assertGreater(w,0);self.assertGreater(h,0)
+                self.assertGreaterEqual(x,area[0]);self.assertGreaterEqual(y,area[1])
+                self.assertLessEqual(x+w,area[2]);self.assertLessEqual(y+h,area[3])
+
+    def test_initial_visibility_and_cancel(self):
+        app=App()
+        self.assertEqual(app.state(),'withdrawn')
+        app.reveal_window();app.update()
+        self.assertEqual(app.state(),'normal')
+        app.close()
+        app=App();app.close()
+        self.assertIsNone(app.reveal_job)
+
+    def test_installer_environment(self):
+        from app_update import installer_environment,spawn_installer
+        with patch.dict(os.environ,{'TCL_LIBRARY':'old-runtime','PYTHONPATH':'old-path'}):
+            env=installer_environment()
+            self.assertEqual(env['PYINSTALLER_RESET_ENVIRONMENT'],'1')
+            self.assertNotIn('TCL_LIBRARY',env);self.assertNotIn('PYTHONPATH',env)
+            self.assertEqual(os.environ['TCL_LIBRARY'],'old-runtime')
+            with patch('app_update.subprocess.Popen') as popen:
+                spawn_installer(['setup.exe'],'test')
+                self.assertEqual(popen.call_args.kwargs['env']['PYINSTALLER_RESET_ENVIRONMENT'],'1')
+
     def test_average(self):
         quantity,cost,average,added=calculate('40','2500',[('2000','40')])
         self.assertEqual((quantity,cost,average,added),(D(80),D(180000),D(2250),D(80000)))

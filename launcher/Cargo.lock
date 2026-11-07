@@ -4,4 +4,4 @@ version = 4
 
 [[package]]
 name = "investment-calculator"
-version = "1.8.4"
+version = "1.8.5"
