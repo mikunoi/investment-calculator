@@ -1,3 +1,15 @@
+# v1.8.8 — 2026-11-08
+
+- 업데이트 후 계산기 프로세스를 이름과 설치 경로로 빠르게 확인합니다.
+- 첫 창이 나타나지 않으면 1.3초 후 재시도하고, 두 번째 실행이 느린 경우 곧바로 종료하지 않습니다.
+- 이 PC의 격리 시험에서 설치 종료 후 창 표시까지 약 1.2초, 강제 재시도는 약 2.25초였습니다. 다른 환경에서는 시간이 달라질 수 있습니다.
+
+## English
+
+- Checks only calculator processes at the installed paths after an update.
+- Retries after 1.3 seconds if the first window is missing, while allowing more time for a slower second launch.
+- On this PC, an isolated update showed its window about 1.2 seconds after setup exited; a forced retry took about 2.25 seconds. Other environments can take longer.
+
 # v1.8.7 — 2026-11-08
 
 - 설정 탭에서 바탕화면 바로가기를 만들고 설치 폴더를 열 수 있습니다.
